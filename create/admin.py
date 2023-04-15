@@ -41,6 +41,7 @@ class BoxAdmin(admin.ModelAdmin):
 @register(BoxPosition)
 class BoxPositionAdmin(admin.ModelAdmin):
     list_display = "box", "sheet", "left", "top", "width", "height"
+    list_filter = "sheet", "box"
 
 
 @register(Playbook)

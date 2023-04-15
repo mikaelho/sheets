@@ -102,7 +102,7 @@
             const element = event.target.parentElement;
             Array.from(element.parentElement.children).forEach(child => {
                 if (child === element || child.classList.contains("selected")) {
-                    child.style["height"] = (parseFloat(child.style["height"]) + event.movementX).toString() + "px";
+                    child.style["height"] = (parseFloat(child.style["height"]) + event.movementY).toString() + "px";
                 }
             });
         }
