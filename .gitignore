@@ -1,0 +1,9 @@
+sheet_images/
+db.sqlite3
+manage.py
+utilities/pages/
+.venv/
+.idea/
+.DS_Store
+create/.DS_Store
+play/.DS_Store

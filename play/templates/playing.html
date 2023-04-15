@@ -1,0 +1,262 @@
+{% load static  %}
+<head>
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
+        }
+        div {position: absolute; user-select: none;}
+        iframe {position: absolute}
+        input {
+            position: absolute;
+            touch-action: none;
+            margin: 0;
+            padding: 1px 5px 0px 5px;
+            border-radius: 2px;
+            border: none;
+        }
+        input:hover {background-color: lightgrey;}
+        .rollButton {
+            position:absolute; width:40px; height: 40px; border-radius: 20px; background-color: #edeffd;;
+            display:flex; align-items: center; justify-content: center; cursor:default; user-select: none;
+            font-size: 24px; font-weight: bold; color: black;
+        }
+        .larger {font-size: 34px;}
+        .rollButton:hover {background-color: #c6d1f6;}
+        .rollSelected {background-color: #759FEA}
+        .rollSelected:hover {background-color: #90b1e7}
+        button {background-color: white; border: none; color: black;}
+    </style>
+    <script>
+        const rollSelection = {};
+        let timeToHide;
+
+        function submitHandler(value, character_id, box_position_id) {
+            const data = {
+                value: value,
+                character_id: character_id,
+                box_position_id: box_position_id,
+            }
+            csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("submit_value", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
+                body: JSON.stringify(data),
+            })
+            .then((response) => response.json())
+            .then((data) => {});
+        }
+
+        function toggle(event, character_id, box_position_id) {
+            submitHandler(toggleMarker(event), character_id, box_position_id);
+        }
+
+        function toggleTextField(event, character_id, box_position_id) {
+            const boolValue = toggleMarker(event);
+            const content = event.target.parentElement.getElementsByTagName("input")[0].value;
+            submitHandler({state: boolValue, content: content}, character_id, box_position_id);
+        }
+
+        function toggleMarker(event) {
+            const marker = event.target.getElementsByTagName("div")[0];
+            let value;
+            if (marker.style.visibility === "hidden") {
+                value = true;
+                marker.style.visibility = "visible";
+            } else {
+                value = false;
+                marker.style.visibility = "hidden";
+            }
+            return value;
+        }
+
+        function updateCheckableTextField(event, character_id, box_position_id) {
+            const content = event.target.value;
+            const marker = event.target.parentElement.getElementsByTagName("div")[0].getElementsByTagName("div")[0];
+            const boolValue = marker.style.visibility === "visible";
+            submitHandler({state: boolValue, content: content}, character_id, box_position_id);
+        }
+
+        function showActions(event, character_id, box_position_id) {
+            const actions = event.target.parentElement.getElementsByClassName("actions")[0];
+            if (actions.style.visibility === "hidden") {
+                actions.style.visibility = "visible";
+                event.target.parentElement.getElementsByClassName("actions")[1].style.visibility = "visible";
+                somethingHappened()
+            } else {
+                showRoller(event, character_id, box_position_id);
+            }
+        }
+
+        function somethingHappened() {
+            setTimeout(hideAllActions, 3000);
+            timeToHide = Date.now() + 2900;
+        }
+
+        function hideAllActions() {
+            if (Date.now() > timeToHide) {
+                Array.from(document.getElementsByClassName("actions")).forEach(action => action.style.visibility = "hidden");
+            }
+        }
+
+        function incrementValue(element, character_id, box_position_id, increment) {
+            const valueContainer = element.getElementsByClassName("valueContainer")[0];
+            let newValue = parseInt(valueContainer.innerText) + increment;
+            valueContainer.innerText = newValue.toString();
+            somethingHappened();
+            submitHandler(newValue, character_id, box_position_id);
+        }
+
+        function showRoller(event, character_id, box_position_id) {
+            event.stopPropagation();
+            Object.keys(rollSelection).forEach(key => delete rollSelection[key]);
+            document.getElementById("resultDisplay").innerText = "";
+
+            rollSelection.character_id = character_id;
+            rollSelection.box_position_id = box_position_id;
+            rollSelection.attributeValue = event.target.parentElement.getElementsByClassName("valueContainer")[0].innerText;
+
+            const overlay = document.getElementById("rollingOverlay");
+            const rollingCenter = document.getElementById("rollingCenter");
+
+            setRollSelectionClasses(rollingCenter);
+
+            rollingCenter.style.left = event.clientX + "px";
+            rollingCenter.style.top = event.clientY + "px";
+            rollingCenter.style.visibility = "visible";
+            overlay.style.visibility = "visible";
+        }
+
+        function rollSelect(event, element) {
+            event.stopPropagation();
+            const value = element.innerText;
+            if (value in rollSelection) {
+                delete rollSelection[value];
+                element.classList.remove("rollSelected");
+            } else {
+                if (value === "–") {
+                    delete rollSelection["+"];
+                } else if (value === "+") {
+                    delete rollSelection["–"];
+                } else {
+                    ["+1", "+2", "+3", "-1", "-2", "-3"].forEach(key => delete rollSelection[key]);
+                }
+                rollSelection[value] = true;
+            }
+            setRollSelectionClasses(element.parentElement);
+        }
+
+        function setRollSelectionClasses(rollSelectionWidget) {
+            Array.from(rollSelectionWidget.children).forEach(child => {
+                const childValue = child.innerText;
+                if (childValue in rollSelection) {
+                    child.classList.add("rollSelected");
+                } else {
+                    child.classList.remove("rollSelected");
+                }
+            });
+        }
+
+        function roll(event) {
+            event.stopPropagation();
+            const rollSelectionElement = event.target.parentElement;
+            rollSelectionElement.style.visibility = "hidden";
+            const roller = document.getElementById("roller");
+            const rollerDocument = roller.contentWindow.document;
+            roller.contentWindow.resultCallback = resultCallback;
+            const diceSelection = rollerDocument.getElementById("set");
+            if ("+" in rollSelection || "–" in rollSelection) {
+                diceSelection.value = "3d6";
+            } else {
+                diceSelection.value = "2d6";
+            }
+            rollerDocument.getElementById("throw").dispatchEvent(new CustomEvent("mouseup"));
+
+
+            document.getElementById("rollerLayer").style.visibility = "visible";
+        }
+
+        function resultCallback(result) {
+            let valueToDrop;
+            if ("+" in rollSelection) {
+                valueToDrop = Math.min(...result);
+            } else if ("–" in rollSelection) {
+                valueToDrop = Math.max(...result);
+            }
+            if (valueToDrop) {
+                result.splice(result.indexOf(valueToDrop), 1);
+            }
+
+            if (rollSelection.attributeValue !== "0") {
+                let attributeValue = rollSelection.attributeValue;
+                if (!(rollSelection.attributeValue.startsWith("-"))) {
+                    attributeValue = "+" + attributeValue;
+                }
+                result.push(attributeValue);
+            }
+
+            ["+1", "+2", "+3", "-1", "-2", "-3"].forEach(bonusMalus => {
+                if (bonusMalus in rollSelection) {result.push(bonusMalus);}
+            });
+
+            let total = 0;
+            for (let i = 0; i < result.length; i++) {
+                if (typeof result[i] === `number`) total += result[i];
+                else total += parseInt(result[i]);
+            }
+            let resultString = result.join(" ") + " = " + total;
+
+            document.getElementById("resultDisplay").innerText = resultString;
+        }
+
+        function revealSheets() {
+            Array.from(document.getElementsByClassName("sheets")).forEach(sheet => sheet.style.visibility = "visible");
+        }
+    </script>
+</head>
+<body onload="setTimeout(revealSheets, 1000);">
+    {% csrf_token %}
+    {% for sheet in sheets %}
+    <div class="sheets" style="visibility: hidden">
+        <div style="left: {{ sheet.left }}; top: 0; width: {{ sheet.image_width }}; height: {{ sheet.image_height }}">
+            <iframe id="sheet{{sheet.id}}" src="{{ sheet.image_url }}#toolbar=0" style="width: {{ sheet.image_width }}; height: {{ sheet.image_height }};">
+            </iframe>
+            <div style="width: 100%; height: 100%"></div>
+            {{ sheet.widgets }}
+        </div>
+
+    </div>
+    {% endfor %}
+    <div id="rollingOverlay"
+         style="position:fixed; width: 100%; height: 100%; backdrop-filter: blur(2px); visibility: hidden;"
+         onclick="this.style.visibility = 'hidden'; document.getElementById('rollingCenter').style.visibility = 'hidden';"
+    >
+        <div id="rollingCenter" style="position: absolute; width: 1px; height: 1px;">
+            <div class="rollButton larger" onclick="roll(event);" style="left:-20px; top: -20px">⚅</div>
+            <div class="rollButton larger" onclick="rollSelect(event, this);" style="left:30px; top: -20px">+</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:15px; top: -55px">+1</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: -70px">+2</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-55px; top: -55px">+3</div>
+            <div class="rollButton larger" onclick="rollSelect(event, this);" style="left:-70px; top: -20px">–</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-55px; top: 15px">-1</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: 30px">-2</div>
+            <div class="rollButton" onclick="rollSelect(event,  this);" style="left:15px; top: 15px">-3</div>
+        </div>
+    </div>
+    <div id="rollerLayer" style="position:absolute; width:100%; height: 100%; visibility: hidden;">
+        <iframe id="roller" style="position:absolute; width:100%; height: 100%;"
+                src="{% static 'dice/dice/index.html' %}"></iframe>
+        <div id="resultDisplay"
+             style="position:absolute; width:100%; height: 100%;
+                display: flex; justify-content: center; align-items: center;
+                text-shadow: 2px 2px white, -2px -2px white; font-size: 48px;
+             "
+             onclick="
+                this.parentElement.style.visibility='hidden';
+                document.getElementById('rollingOverlay').style.visibility='hidden';
+             "
+        >
+        </div>
+    </div>
+</body>

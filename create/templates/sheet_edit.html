@@ -1,0 +1,180 @@
+<head>
+    <script>
+        function clickHandler(event) {
+            const tester = document.getElementById("tester");
+            const overlay = tester.getElementsByClassName("boxOverlay")[0]
+            overlay.style["visibility"] = "hidden";
+            leaveHandler(event);
+            const entry = tester.getElementsByClassName("entry")[0]
+            entry.focus()
+
+            event.stopPropagation();
+        }
+
+        function submitHandler(event) {
+            if (event.code === "Enter") {
+                const tester = document.getElementById("tester");
+                const overlay = tester.getElementsByClassName("boxOverlay")[0]
+                const entry = tester.getElementsByClassName("entry")[0]
+                entry.blur()
+            }
+        }
+
+        function blurHandler(event) {
+            const tester = document.getElementById("tester");
+            const overlay = tester.getElementsByClassName("boxOverlay")[0]
+            overlay.style["visibility"] = "visible";
+        }
+
+        function downHandler(event) {
+            const element = event.target
+            element.onpointermove = moveHandler
+            element.setPointerCapture(event.pointerId)
+
+            const nameElement = element.getElementsByClassName("boxName")[0]
+            nameElement.style["visibility"] = "visible";
+
+            event.stopPropagation();
+        }
+
+        function upHandler(event) {
+            const element = event.target;
+            element.onpointermove = null;
+            element.releasePointerCapture(event.pointerId)
+
+            const nameElement = element.getElementsByClassName("boxName")[0]
+            nameElement.style["visibility"] = "hidden";
+
+            event.stopPropagation();
+            updateBox(element);
+        }
+
+        function widthDownHandler(event) {
+            event.target.onpointermove = widthMoveHandler
+            event.target.setPointerCapture(event.pointerId)
+            event.stopPropagation();
+        }
+
+        function widthUpHandler(event) {
+            const element = event.target;
+            element.onpointermove = null;
+            element.releasePointerCapture(event.pointerId)
+            event.stopPropagation();
+            updateBox(element.parentElement);
+        }
+
+        function widthMoveHandler(event) {
+            const element = event.target.parentElement;
+            element.style["width"] = (parseFloat(element.style["width"]) + event.movementX).toString() + "px";
+        }
+
+        function heightDownHandler(event) {
+            event.target.onpointermove = heightMoveHandler
+            event.target.setPointerCapture(event.pointerId)
+            event.stopPropagation();
+        }
+
+        function heightUpHandler(event) {
+            const element = event.target;
+            element.onpointermove = null;
+            element.releasePointerCapture(event.pointerId)
+            event.stopPropagation();
+            updateBox(element.parentElement);
+        }
+
+        function heightMoveHandler(event) {
+            const element = event.target.parentElement;
+            element.style["height"] = (parseFloat(element.style["height"]) + event.movementY).toString() + "px";
+        }
+
+        function updateBox(box) {
+            const box_id = box.id.substring(3);
+            const left = parseFloat(box.style["left"]).toString();
+            const top = parseFloat(box.style["top"]).toString();
+            const width = parseFloat(box.style["width"]).toString();
+            const height = parseFloat(box.style["height"]).toString();
+
+            fetch(`update_box?box_id=${box_id}&left=${left}&top=${top}&width=${width}&height=${height}`)
+            .then((response) => response.json())
+            .then((data) => {});
+        }
+
+        function moveHandler(event) {
+            const element = event.target;
+            //event.stopPropagation();
+            element.style["left"] = (parseFloat(element.style["left"]) + event.movementX).toString() + "px";
+            element.style["top"] = (parseFloat(element.style["top"]) + event.movementY).toString() + "px";
+        }
+
+        function enterHandler(event) {
+            const tester = document.getElementById("tester");
+            const overlay = tester.getElementsByClassName("boxOverlay")[0]
+            const mover = overlay.getElementsByClassName("mover")[0]
+            mover.style["visibility"] = "visible";
+        }
+
+        function leaveHandler(event) {
+            event.stopPropagation();
+            const tester = document.getElementById("tester");
+            const overlay = tester.getElementsByClassName("boxOverlay")[0]
+            const mover = overlay.getElementsByClassName("mover")[0]
+            mover.style["visibility"] = "hidden";
+        }
+
+        function getNewBox(id) {
+            fetch("create_box?box_id=" + id + "&sheet_id={{ sheet_id }}")
+            .then((response) => response.json())
+            .then((data) => {
+                const overlay = document.getElementById("overlay");
+                overlay.insertAdjacentHTML("beforeend", data["box_html"]);
+            });
+        }
+    </script>
+    <style>
+        * { padding: 0; margin: 0; }
+        iframe { position: absolute; }
+        div { position: absolute; touch-action: none; }
+        input {
+            position: absolute;
+            touch-action: none;
+            margin: 0;
+            padding: 1px 5px 0px 5px;
+            border: 1px solid #759FEAFF;
+            border-radius: 2px;
+            font-family: arial, helvetica, sans-serif;
+            font-size: 16px;
+        }
+        .elementSelect:hover { background-color: #759FEA55; }
+        .mover {
+            left: -20px; top: -20px; width: 40px; height: 40px;
+            font-size: x-large; color: #759FEAFF;
+            cursor: grab; user-select: none;
+        }
+        .actionIcon {
+            width: 100%; height: 100%; text-align: center; line-height: 40px;
+        }
+        .placeholder {
+            border: 2px solid #759FEAFF;
+            background-color: #759FEAAA;
+            border-radius: 2px;
+            cursor: move;
+        }
+        .boxName {
+            top: -33px; height: 20px; width: 400px; padding: 4px;
+            background-color: #FFFFFFDD; color: #759FEAFF;
+            visibility: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <iframe src="{{ sheet_url }}#toolbar=0"
+            style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }}"></iframe>
+
+    <div id="overlay" style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }};">
+        {{ box_positions }}
+    </div>
+    <div style="left: {{ image_width }}; width: 400px;">
+        {{ box_list }}
+    </div>
+</body>
