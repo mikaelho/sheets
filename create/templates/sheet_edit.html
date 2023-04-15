@@ -132,7 +132,61 @@
                     child.style["top"] = (parseFloat(child.style["top"]) + event.movementY).toString() + "px";
                 }
             });
-            //event.stopPropagation();
+        }
+
+        function keyHandler(event) {
+            const mapDimension = {
+                "KeyL": "left",
+                "KeyT": "top",
+                "KeyW": "width",
+                "KeyH": "height",
+            }
+            const mapDistribution = {
+                "KeyH": "left",
+                "KeyV": "top",
+            }
+            const elements = Array.from(
+                document.getElementById("overlay").children
+            ).filter(element => element.classList.contains("selected"));
+
+            if (elements.length < 2) return;
+
+            let attribute = mapDimension[event.code];
+            if (attribute) {
+                const value = getMinimumValue(attribute, elements);
+                elements.forEach(element => {element.style[attribute] = `${value}px`;});
+                updateBox(elements[0]);
+                return;
+            }
+
+            attribute = mapDistribution[event.code];
+            if (attribute) {
+                if (elements.length < 3) return;
+                elements.sort((a, b) => parseFloat(a.style[attribute]) - parseFloat(b.style[attribute]));
+                const startValue = parseFloat(elements[0].style[attribute]);
+                const endValue = parseFloat(elements.slice(-1)[0].style[attribute]);
+                const increment = (endValue - startValue) / (elements.length - 1);
+                let currentValue = startValue + increment;
+                for (let i = 1; i < (elements.length - 1); i++) {
+                    elements[i].style[attribute] = `${currentValue}px`;
+                    currentValue += increment;
+                }
+                updateBox(elements[0]);
+            }
+        }
+
+        function getMinimumValue(attribute, elements) {
+            let value = parseFloat(elements[0].style[attribute]);
+            elements.forEach(element => {
+                const possibleValue = parseFloat(element.style[attribute]);
+                if (possibleValue < value) {
+                    value = possibleValue;
+                }
+            })
+            return value;
+        }
+
+        function sortElements(attribute, elements) {
 
         }
 
@@ -198,12 +252,13 @@
         }
     </style>
 </head>
-<body>
+<body onkeydown="keyHandler(event);">
 
     <iframe src="{{ sheet_url }}#toolbar=0"
             style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }}"></iframe>
 
-    <div id="overlay" style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }};" onclick="clearSelections(event);">
+    <div id="overlay" style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }};"
+         onclick="clearSelections(event);">
         {{ box_positions }}
     </div>
     <div style="left: {{ image_width }}; width: 400px;">
