@@ -1,14 +1,19 @@
 <head>
     <script>
-        function clickHandler(event) {
-            const tester = document.getElementById("tester");
-            const overlay = tester.getElementsByClassName("boxOverlay")[0]
-            overlay.style["visibility"] = "hidden";
-            leaveHandler(event);
-            const entry = tester.getElementsByClassName("entry")[0]
-            entry.focus()
+        let justClick;
+        const selectedElements = [];
 
+        function clickHandler(event) {
+            const element = event.target;
             event.stopPropagation();
+
+            const selected = element.classList.toggle("selected");
+        }
+
+        function clearSelections(event) {
+            if (event.target !== event.currentTarget) return;
+            event.stopPropagation();
+            Array.from(overlay.children).forEach(child => child.classList.remove("selected"));
         }
 
         function submitHandler(event) {
@@ -27,17 +32,20 @@
         }
 
         function downHandler(event) {
-            const element = event.target
-            element.onpointermove = moveHandler
-            element.setPointerCapture(event.pointerId)
+            event.stopPropagation();
+            justClick = true;
+            const element = event.target;
+            element.onpointermove = moveHandler;
+            element.setPointerCapture(event.pointerId);
 
-            const nameElement = element.getElementsByClassName("boxName")[0]
+            const nameElement = element.getElementsByClassName("boxName")[0];
             nameElement.style["visibility"] = "visible";
 
             event.stopPropagation();
         }
 
         function upHandler(event) {
+            event.stopPropagation();
             const element = event.target;
             element.onpointermove = null;
             element.releasePointerCapture(event.pointerId)
@@ -45,27 +53,35 @@
             const nameElement = element.getElementsByClassName("boxName")[0]
             nameElement.style["visibility"] = "hidden";
 
-            event.stopPropagation();
-            updateBox(element);
+            if (justClick) {
+                justClick = false;
+                clickHandler(event);
+            } else {
+                updateBox(element);
+            }
         }
 
         function widthDownHandler(event) {
-            event.target.onpointermove = widthMoveHandler
-            event.target.setPointerCapture(event.pointerId)
+            event.target.onpointermove = widthMoveHandler;
+            event.target.setPointerCapture(event.pointerId);
             event.stopPropagation();
         }
 
         function widthUpHandler(event) {
             const element = event.target;
             element.onpointermove = null;
-            element.releasePointerCapture(event.pointerId)
+            element.releasePointerCapture(event.pointerId);
             event.stopPropagation();
             updateBox(element.parentElement);
         }
 
         function widthMoveHandler(event) {
             const element = event.target.parentElement;
-            element.style["width"] = (parseFloat(element.style["width"]) + event.movementX).toString() + "px";
+            Array.from(element.parentElement.children).forEach(child => {
+                if (child === element || child.classList.contains("selected")) {
+                    child.style["width"] = (parseFloat(child.style["width"]) + event.movementX).toString() + "px";
+                }
+            });
         }
 
         function heightDownHandler(event) {
@@ -84,26 +100,40 @@
 
         function heightMoveHandler(event) {
             const element = event.target.parentElement;
-            element.style["height"] = (parseFloat(element.style["height"]) + event.movementY).toString() + "px";
+            Array.from(element.parentElement.children).forEach(child => {
+                if (child === element || child.classList.contains("selected")) {
+                    child.style["height"] = (parseFloat(child.style["height"]) + event.movementX).toString() + "px";
+                }
+            });
         }
 
-        function updateBox(box) {
-            const box_id = box.id.substring(3);
-            const left = parseFloat(box.style["left"]).toString();
-            const top = parseFloat(box.style["top"]).toString();
-            const width = parseFloat(box.style["width"]).toString();
-            const height = parseFloat(box.style["height"]).toString();
+        function updateBox(element) {
+            Array.from(element.parentElement.children).forEach(box => {
+                if (box === element || box.classList.contains("selected")) {
+                    const box_id = box.id.substring(3);
+                    const left = parseFloat(box.style["left"]).toString();
+                    const top = parseFloat(box.style["top"]).toString();
+                    const width = parseFloat(box.style["width"]).toString();
+                    const height = parseFloat(box.style["height"]).toString();
 
-            fetch(`update_box?box_id=${box_id}&left=${left}&top=${top}&width=${width}&height=${height}`)
-            .then((response) => response.json())
-            .then((data) => {});
+                    fetch(`update_box?box_id=${box_id}&left=${left}&top=${top}&width=${width}&height=${height}`)
+                    .then((response) => response.json())
+                    .then((data) => {});
+                }
+            });
         }
 
         function moveHandler(event) {
+            justClick = false;
             const element = event.target;
+            Array.from(element.parentElement.children).forEach(child => {
+                if (child === element || child.classList.contains("selected")) {
+                    child.style["left"] = (parseFloat(child.style["left"]) + event.movementX).toString() + "px";
+                    child.style["top"] = (parseFloat(child.style["top"]) + event.movementY).toString() + "px";
+                }
+            });
             //event.stopPropagation();
-            element.style["left"] = (parseFloat(element.style["left"]) + event.movementX).toString() + "px";
-            element.style["top"] = (parseFloat(element.style["top"]) + event.movementY).toString() + "px";
+
         }
 
         function enterHandler(event) {
@@ -134,6 +164,8 @@
         * { padding: 0; margin: 0; }
         iframe { position: absolute; }
         div { position: absolute; touch-action: none; }
+        .selected { background-color: rgba(93, 185, 93, 0.69) !important; }
+        }
         input {
             position: absolute;
             touch-action: none;
@@ -171,7 +203,7 @@
     <iframe src="{{ sheet_url }}#toolbar=0"
             style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }}"></iframe>
 
-    <div id="overlay" style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }};">
+    <div id="overlay" style="left: 0; top: 0; width: {{ image_width }}; height: {{ image_height }};" onclick="clearSelections(event);">
         {{ box_positions }}
     </div>
     <div style="left: {{ image_width }}; width: 400px;">
