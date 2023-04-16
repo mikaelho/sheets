@@ -3,16 +3,16 @@
     <style>
         table {
           font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
-          font-size: 125%;
+          /*font-size: 125%;*/
           margin: 0;
           border-collapse: separate;
           border-spacing: 0;
           table-layout: fixed;
-          border: 1px solid black;
+          border: 1px solid #444444;
         }
         table td,
         table th {
-          border: 1px solid black;
+          border: 1px solid #444444;
           padding: 0.5rem 1rem;
         }
         table thead th {
@@ -21,8 +21,10 @@
           top: 0;
           z-index: 1;
           width: 25vw;
-          background: white;
+          background: #444444;
+          color: white;
         }
+        table thead th:nth-child(1) {width: 15vw;}
         table td {
           background: #fff;
           padding: 4px 5px;
@@ -43,7 +45,7 @@
         table tbody th {
           position: sticky;
           left: 0;
-          background: white;
+          background: #DDDDDD;
           z-index: 1;
         }
         caption {
@@ -63,7 +65,7 @@
           outline: 0;
         }
         a {
-          color: darkslategray;
+          color: white;
           text-decoration: none;
         }
     </style>
