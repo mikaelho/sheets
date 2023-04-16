@@ -1,0 +1,6 @@
+asgiref
+Django
+pypdf
+sqlparse
+typing_extensions
+requests

@@ -23,6 +23,7 @@ from create.views import create_initial_box_position
 from create.views import update_box_position
 from play.views import edit_character
 from play.views import game_view
+from play.views import report_roll_result
 from play.views import submit_value
 
 
@@ -33,5 +34,6 @@ urlpatterns = [
     path("all_characters", game_view, name="all_characters"),
     path("edit_character", edit_character, name="edit_character"),
     path("submit_value", submit_value, name="submit_value"),
+    path("report_roll", report_roll_result, name="report_roll"),
     path("admin/", admin.site.urls),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

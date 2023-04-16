@@ -27,10 +27,18 @@
         .rollSelected {background-color: #759FEA}
         .rollSelected:hover {background-color: #90b1e7}
         button {background-color: white; border: none; color: black;}
+        .toast {
+            position: fixed; width: 100%; height: 60px; bottom: -60px;
+            background-color: black; color: white;
+            text-align: center; font-size: 32px;
+            transition: bottom 0.5s;
+        }
     </style>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
     <script>
         const rollSelection = {};
         let timeToHide;
+        let pubnub;
 
         function submitHandler(value, character_id, box_position_id) {
             const data = {
@@ -208,6 +216,58 @@
             let resultString = result.join(" ") + " = " + total;
 
             document.getElementById("resultDisplay").innerText = resultString;
+
+            pubnub.publish({
+                message: {content: `{{ character_name }}: ${resultString}`},
+                channel: "game",
+            });
+
+            //reportRoll(resultString);
+        }
+
+        function reportRoll(rollResult) {
+            const data = {
+                "character_id": rollSelection.character_id,
+                "box_position_id": rollSelection.box_position_id,
+                "roll_result": rollResult,
+            }
+
+            const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("report_roll", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
+                body: JSON.stringify(data),
+            });
+        }
+
+        function initialize() {
+            setTimeout(revealSheets, 1000);
+
+            pubnub = new PubNub({
+                publishKey : "{{ publish_key }}",
+                subscribeKey : "{{ subscribe_key }}",
+                userId: "{{ user_id }}"
+            });
+
+            pubnub.addListener({
+                message: (messageEvent) => {
+                    showMessage(messageEvent.message.content);
+                },
+            });
+
+            pubnub.subscribe({channels: ["game"]});
+        }
+
+        function showMessage(message) {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.innerText = message;
+            toast.style.bottom = "0px";
+            setTimeout(hideMessage, 6000);
+        }
+
+        function hideMessage() {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.style.bottom = "-60px";
         }
 
         function revealSheets() {
@@ -215,7 +275,7 @@
         }
     </script>
 </head>
-<body onload="setTimeout(revealSheets, 1000);">
+<body onload="initialize();">
     {% csrf_token %}
     {% for sheet in sheets %}
     <div class="sheets" style="visibility: hidden">
@@ -259,4 +319,5 @@
         >
         </div>
     </div>
+    <div class="toast"></div>
 </body>

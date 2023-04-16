@@ -1,5 +1,8 @@
 import json
+import os
+import uuid
 
+import requests
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -179,6 +182,10 @@ def edit_character(request):
 
     context = {
         "sheets": sheets,
+        "publish_key": os.environ["PUBNUB_PUBLISH"],
+        "subscribe_key": os.environ["PUBNUB_SUBSCRIBE"],
+        "user_id": str(uuid.uuid4()),
+        "character_name": str(character),
     }
 
     return render(request, "playing.html", context)
@@ -192,6 +199,21 @@ def submit_value(request):
     character = Character.objects.get(id=character_id)
     character.values[str(box_position_id)] = value
     character.save()
+
+    return JsonResponse({"ok": True})
+
+
+def report_roll_result(request):
+    data = json.loads(request.body)
+    character_id = data.get("character_id")
+    box_position_id = data.get("box_position_id")
+    roll_result = data.get("roll_result")
+    character_name = str(Character.objects.get(id=character_id))
+    attribute_name = BoxPosition.objects.get(id=box_position_id).box.name
+
+    message = f"{character_name}\n{attribute_name}: {roll_result}"
+    print(message)
+    requests.post(os.environ["DISCORD_WEBHOOK"], data={"content": message})
 
     return JsonResponse({"ok": True})
 
