@@ -289,7 +289,7 @@
     </div>
     {% endfor %}
     <div id="rollingOverlay"
-         style="position:fixed; width: 100%; height: 100%; backdrop-filter: blur(2px); visibility: hidden;"
+         style="position:fixed; top:0; left: 0; bottom: 0; right: 0; backdrop-filter: blur(2px); visibility: hidden;"
          onclick="this.style.visibility = 'hidden'; document.getElementById('rollingCenter').style.visibility = 'hidden';"
     >
         <div id="rollingCenter" style="position: absolute; width: 1px; height: 1px;">
@@ -304,7 +304,7 @@
             <div class="rollButton" onclick="rollSelect(event,  this);" style="left:15px; top: 15px">-3</div>
         </div>
     </div>
-    <div id="rollerLayer" style="position:absolute; width:100%; height: 100%; visibility: hidden;">
+    <div id="rollerLayer" style="position:fixed; top:0; left: 0; bottom: 0; right: 0; visibility: hidden;">
         <iframe id="roller" style="position:absolute; width:100%; height: 100%;"
                 src="{% static 'dice/dice/index.html' %}"></iframe>
         <div id="resultDisplay"

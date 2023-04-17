@@ -61,6 +61,9 @@ def game_view(request):
         "characters": characters,
         "attributes": attributes,
         "attributes_in_groups": attributes_in_groups,
+        "publish_key": os.environ["PUBNUB_PUBLISH"],
+        "subscribe_key": os.environ["PUBNUB_SUBSCRIBE"],
+        "user_id": str(uuid.uuid4()),
     }
 
     return render(request, "game.html", context=context)
