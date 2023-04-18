@@ -76,10 +76,15 @@ def edit_character(request):
     character = Character.objects.get(id=character_id)
 
     sheets = []
-    left = 0
+    left = top = max_height = 0
 
-    for sheet in (character.playbook.sheet1, character.playbook.sheet2,
-                  character.playbook.sheet3):
+    for index in range(1, 10):
+        sheet = getattr(character.playbook, f"sheet{index}")
+
+        if not sheet: continue
+
+        max_height = max(max_height, sheet.image_height)
+
         widgets = ""
 
         for box_position in BoxPosition.objects.filter(sheet=sheet):
@@ -175,13 +180,18 @@ def edit_character(request):
 
         sheets.append({
             "left": f"{left}pt",
+            "top": f"{top}pt",
             "image_width": f"{sheet.image_width}pt",
             "image_height": f"{sheet.image_height}pt",
             "image_url": sheet.image.url,
             "widgets": mark_safe(widgets),
             "id": sheet.id,
         })
-        left += sheet.image_width
+        if index % 3 == 0:
+            top += max_height
+            left = max_height = 0
+        else:
+            left += sheet.image_width
 
     context = {
         "sheets": sheets,

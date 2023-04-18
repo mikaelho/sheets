@@ -222,7 +222,7 @@
                 channel: "game",
             });
 
-            //reportRoll(resultString);
+            reportRoll(resultString);
         }
 
         function reportRoll(rollResult) {
@@ -277,17 +277,16 @@
 </head>
 <body onload="initialize();">
     {% csrf_token %}
-    {% for sheet in sheets %}
     <div class="sheets" style="visibility: hidden">
-        <div style="left: {{ sheet.left }}; top: 0; width: {{ sheet.image_width }}; height: {{ sheet.image_height }}">
+        {% for sheet in sheets %}
+        <div style="left: {{ sheet.left }}; top: {{ sheet.top }}; width: {{ sheet.image_width }}; height: {{ sheet.image_height }}">
             <iframe id="sheet{{sheet.id}}" src="{{ sheet.image_url }}#toolbar=0" style="width: {{ sheet.image_width }}; height: {{ sheet.image_height }};">
             </iframe>
             <div style="width: 100%; height: 100%"></div>
             {{ sheet.widgets }}
         </div>
-
+        {% endfor %}
     </div>
-    {% endfor %}
     <div id="rollingOverlay"
          style="position:fixed; top:0; left: 0; bottom: 0; right: 0; backdrop-filter: blur(2px); visibility: hidden;"
          onclick="this.style.visibility = 'hidden'; document.getElementById('rollingCenter').style.visibility = 'hidden';"

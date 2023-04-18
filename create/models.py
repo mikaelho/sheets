@@ -80,6 +80,12 @@ class Playbook(models.Model):
     sheet1 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook1", on_delete=models.CASCADE)
     sheet2 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook2", on_delete=models.CASCADE)
     sheet3 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook3", on_delete=models.CASCADE)
+    sheet4 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook4", on_delete=models.CASCADE)
+    sheet5 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook5", on_delete=models.CASCADE)
+    sheet6 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook6", on_delete=models.CASCADE)
+    sheet7 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook7", on_delete=models.CASCADE)
+    sheet8 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook8", on_delete=models.CASCADE)
+    sheet9 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook9", on_delete=models.CASCADE)
 
     def __str__(self):
         return f"{self.name} ({self.game.name})"
