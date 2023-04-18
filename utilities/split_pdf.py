@@ -16,5 +16,4 @@ else:
     for page_no, page in enumerate(reader.pages):
         with PdfWriter() as writer:
             writer.add_page(page)
-            # with open(, "wb") as output:
             writer.write(f"{output_dir}/page{page_no:03}.pdf")
