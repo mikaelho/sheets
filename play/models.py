@@ -51,6 +51,8 @@ class Case(models.Model):
     play = models.ForeignKey(Play, on_delete=models.CASCADE)
     image = models.FileField(upload_to="people_images", null=True, blank=True)
     visible = models.BooleanField(default=False, null=True)
+    open = models.BooleanField(default=False, null=True)
+    player_notes = models.TextField(null=True, blank=True)
     gm_notes = models.TextField(null=True, blank=True)
 
     def __str__(self):

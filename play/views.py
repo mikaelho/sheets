@@ -289,14 +289,20 @@ def format_case(case: Case):
         title = f"<strong>{case.name.upper()}</strong>"
 
     return mark_safe(f"""
-    <details>
+    <details {'open="true"' if case.open else ""}>
         <summary>{title}</summary>
-        <table>
-        <tr>
-            {"".join(f"<td>{format_person(person)}</td>" for person in people)}
-            {"".join(f"<td>{format_location(location)}</td>" for location in locations)}
-        </tr>
-        </table>
+        <h3>Case Notes</h3>
+        {format_notes(case, "c")}
+
+        <h3>Persons of Note</h3>
+        <div class="gridWrap">
+            {"".join(f'<div class="card">{format_person(person)}</div>' for person in people)}
+        </div>
+
+        <h3>Places of Interest</h3>
+        <div class="gridWrap">
+            {"".join(f'<div class="card">{format_location(location)}</div>' for location in locations)}
+        </div>
     </details>
     """)
 
@@ -306,27 +312,27 @@ def format_person(person: Person):
     <div style="background: radial-gradient(transparent 50%, white), url('{ person.image.url }');
                  background-size: cover; width: 150px; height: 225px; margin: auto;">
     </div>
-    <p><strong>{person.name}</strong></p>
-    <p>{person.description}</p>
-    <p>Notes:</p>
+    <p><strong>{person.name}</strong><br/>{person.description}</p>
+    <span style="font-style: italic;">Notes:</span>
     {format_notes(person, "p")}
     """
 
 
 def format_location(location: Location):
     return f"""
-        <p><strong>{location.name}</strong></p>
-        <p>{location.description}</p>
+        <p><strong>{location.name}</strong><br/>{location.description}</p>
+        <p><span style="font-style: italic;">Notes:</span></p>
+        {format_notes(location, "l")}
         """
 
 
 def format_notes(obj, obj_type):
     return f"""
-    <div id="{obj_type}{obj.id}" style="position:relative; width:100%">
+    <div id="{obj_type}{obj.id}">
         <div class="notes asHTML" onclick="startEditNote(this);">{markdown(obj.player_notes or "")}
         </div>
         <div class="notes asMarkdown" contenteditable onblur="stopEditNote(this);"
-         style="visibility: hidden; white-space: pre-wrap;">{obj.player_notes or ""}</div>
+         style="display: none; white-space: pre-wrap;">{obj.player_notes or ""}</div>
     </div>
     """
 
@@ -335,7 +341,7 @@ def update_notes(request):
     note_id = data.get("noteId")
     value = data.get("value")
 
-    model_map = {"p": Person, "l": Location}
+    model_map = {"p": Person, "l": Location, "c": Case}
     obj = model_map[note_id[0]].objects.get(id=int(note_id[1:]))
     obj.player_notes = value
     obj.save()
