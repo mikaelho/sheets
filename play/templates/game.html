@@ -1,6 +1,10 @@
 <!-- https://css-tricks.com/a-table-with-both-a-sticky-header-and-a-sticky-first-column/ -->
 <head>
     <style>
+        :root {
+          --main-color: #cbad84;
+        }
+        body { background-color: var(--main-color); }
         table {
           font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
           /*font-size: 125%;*/
@@ -8,11 +12,11 @@
           border-collapse: separate;
           border-spacing: 0;
           table-layout: fixed;
-          border: 1px solid #444444;
+          border: 1px solid var(--main-color);
         }
         table td,
         table th {
-          border: 1px solid #444444;
+          border: 1px solid var(--main-color);
           padding: 0.5rem 1rem;
         }
         table thead th {
@@ -21,8 +25,9 @@
           top: 0;
           z-index: 1;
           width: 25vw;
-          background: #444444;
-          color: white;
+          background: var(--main-color);
+          color: black;
+          font-size: larger;
         }
         table thead th:nth-child(1) {width: 15vw;}
         table td {
@@ -32,8 +37,8 @@
         }
 
         table tbody th {
-          font-weight: 100;
           font-style: italic;
+          font-weight: bolder;
           text-align: left;
           position: relative;
         }
@@ -45,7 +50,7 @@
         table tbody th {
           position: sticky;
           left: 0;
-          background: #DDDDDD;
+          background: #ecd5bd;
           z-index: 1;
         }
         caption {
@@ -65,7 +70,7 @@
           outline: 0;
         }
         a {
-          color: white;
+          color: black;
           text-decoration: none;
         }
         .toast {
@@ -75,6 +80,11 @@
             transition: bottom 0.5s;
             z-index: 1000;
         }
+        /*
+        .characterImageDiv { width: 30%; background: radial-gradient(transparent 50%, white);}
+        .characterImage { width: 100%; height: auto; }
+        .characterImageOverlay { width: 100%; height: 100%; background: radial-gradient(transparent 50%, white);}
+        */
     </style>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
     <script>
@@ -112,9 +122,17 @@
 <body onload="initialize();">
     <table>
         <thead>
-            <th>{{ play_name }}</th>
+            <th>{{ play_name|upper }}</th>
             {% for character in characters %}
-                <th>{{ character.name }} - {{ character.playbook }} {{ character.play_link }}</th>
+                <th>
+                    {% if character.image_link %}
+                        <div class="characterImageDiv"
+                             style="background: radial-gradient(transparent 50%, var(--main-color)), url('{{ character.image_link }}');
+                                     background-size: cover; width: 150px; height: 225px; margin: auto;">
+                        </div>
+                    {% endif %}
+                    <p>{{ character.name }} - {{ character.playbook }} {{ character.play_link }}</p>
+                </th>
             {% endfor %}
         </thead>
         <tbody>

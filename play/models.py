@@ -23,7 +23,7 @@ class Character(models.Model):
     play = models.ForeignKey(Play, on_delete=models.CASCADE)
     player = models.ForeignKey(Player, on_delete=models.CASCADE)
     playbook = models.ForeignKey(Playbook, on_delete=models.CASCADE)
-
+    image = models.FileField(upload_to="people_images", null=True, blank=True)
     values = models.JSONField(default=dict, null=True, blank=True)
 
     def __str__(self):
@@ -37,7 +37,7 @@ class CaseFiles(models.Model):
 
     play = models.OneToOneField(Play, on_delete=models.CASCADE)
     case_files_are_called = models.CharField(default="Case Files", max_length=50)
-    case_files_subtitle = models.CharField(max_length=50, null=True, blank=True)
+    case_files_subtitle = models.CharField(max_length=1024, null=True, blank=True)
     cases_are_called = models.CharField(default="Case", max_length=50, null=True, blank=True)
     people_are_called = models.CharField(default="Persons of Interest", max_length=50, null=True, blank=True)
     locations_are_called = models.CharField(default="Places of Note", max_length=50, null=True, blank=True)
@@ -49,6 +49,9 @@ class CaseFiles(models.Model):
 class Case(models.Model):
     name = models.CharField(max_length=50)
     play = models.ForeignKey(Play, on_delete=models.CASCADE)
+    image = models.FileField(upload_to="people_images", null=True, blank=True)
+    visible = models.BooleanField(default=False, null=True)
+    gm_notes = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.play.name})"
@@ -56,14 +59,26 @@ class Case(models.Model):
 
 class Person(models.Model):
     name = models.CharField(max_length=50)
+    sort_order = models.PositiveIntegerField(null=True, blank=True)
+    visible = models.BooleanField(default=False, null=True)
     image = models.FileField(upload_to="people_images", null=True, blank=True)
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    notes = models.JSONField(default=dict, blank=True)
+    player_notes = models.TextField(null=True, blank=True)
+    gm_notes = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.case.name})"
 
 
 class Location(models.Model):
     name = models.CharField(max_length=50)
+    sort_order = models.PositiveIntegerField(null=True, blank=True)
+    visible = models.BooleanField(default=False, null=True)
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
-    notes = models.JSONField(default=dict, blank=True)
+    player_notes = models.TextField(null=True, blank=True)
+    gm_notes = models.TextField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.case.name})"

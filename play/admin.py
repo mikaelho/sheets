@@ -15,9 +15,13 @@ def all_characters(play):
     return mark_safe(f'<a href="{reverse("all_characters")}?play_id={play.id}">All characters</a>')
 
 
+def view_case_files(play):
+    return mark_safe(f'<a href="{reverse("case_files")}?play_id={play.id}">Case files</a>')
+
+
 @register(Play)
 class PlayAdmin(admin.ModelAdmin):
-    list_display = ("name", "game", all_characters)
+    list_display = ("name", "game", all_characters, view_case_files)
 
 
 @register(Player)
@@ -32,6 +36,7 @@ def open_character(character):
 @register(Character)
 class CharacterAdmin(admin.ModelAdmin):
     list_display = ("__str__", open_character, "playbook", "play", "player")
+    list_filter = "playbook", "play", "player"
 
 
 @register(CaseFiles)
@@ -42,13 +47,16 @@ class CaseFilesAdmin(admin.ModelAdmin):
 @register(Case)
 class CaseAdmin(admin.ModelAdmin):
     list_display = "name", "play"
+    list_filter = ("play",)
 
 
 @register(Person)
 class PersonAdmin(admin.ModelAdmin):
     list_display = "name", "case"
+    list_filter = "case", "case__play"
 
 
 @register(Location)
 class LocationAdmin(admin.ModelAdmin):
     list_display = "name", "case"
+    list_filter = "case", "case__play"

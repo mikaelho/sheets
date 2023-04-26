@@ -1,0 +1,55 @@
+<html>
+<head>
+    <style>
+        :root {
+          --main-color: #cbad84;
+        }
+        * {
+            font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
+        }
+        body { background-color: var(--main-color); }
+        details {background-color: white; padding: 20px; }
+        summary { padding-bottom: 10px; }
+        table tr td {
+          border-right: 1px solid var(--main-color);
+          padding: 10px;
+          width: 250px;
+          vertical-align: top;
+        }
+        table tr td:last-of-type {
+          border: none;
+        }
+        summary::marker {
+          content: "";
+        }
+        .notes { min-height: 100px; position: absolute; }
+        .asMarkdown { padding: 4px; }
+    </style>
+    <script>
+        function startEditNote(element) {
+            element.style.visibility = "hidden";
+            const markdown = element.parentElement.getElementsByClassName("asMarkdown")[0];
+            markdown.style.visibility = "visible";
+            markdown.focus();
+        }
+        function stopEditNote(element) {
+            const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("update_note", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
+                body: JSON.stringify({noteId: element.parentElement.id, value: element.innerText}),
+            })
+            .then((response) => response.json())
+            .then((data) => {element.parentElement.innerHTML = data["content"]});
+        }
+    </script>
+</head>
+<body>
+    {% csrf_token %}
+    <h3>{{ title }}</h3>
+    <p>{{ subtitle }}</p>
+    {% for case in cases %}
+        {{ case }}
+    {% endfor %}
+</body>
+</html>

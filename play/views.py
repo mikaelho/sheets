@@ -3,17 +3,21 @@ import os
 import uuid
 
 import requests
+from create.models import Box
+from create.models import BoxPosition
+from create.views import default_size_by_kind
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
-
-from create.models import Box
-from create.models import BoxPosition
-from create.views import default_size_by_kind
+from markdown import markdown
 from play.admin import open_character
+from play.models import Case
+from play.models import CaseFiles
 from play.models import Character
+from play.models import Location
+from play.models import Person
 from play.models import Play
 
 
@@ -29,6 +33,7 @@ def game_view(request):
 
     characters = [{
         "name": str(character),
+        "image_link": character.image.url,
         "play_link": open_character(character),
         "player": character.player.name,
         "playbook": character.playbook.name,
@@ -164,7 +169,7 @@ def edit_character(request):
 
                 widgets += f"""
                     <div style="position: absolute; {get_position(box_position)}; background-color: white">
-                        
+
                         <div style="position: absolute; top: 3px; width: {width}px; height: {height}px; {style}"
                             {click}>
                             <div style="margin: 1px; width: {inner}px; height: {inner}px; background-color: grey;
@@ -172,7 +177,7 @@ def edit_character(request):
                             ">
                             </div>
                         </div>
-                        
+
                         <input style="position: absolute; height: 100%; left: {width + 4}px; right: 0; {get_font()}"
                             value="{value['content']}" {change}>
                     </div>
@@ -252,3 +257,87 @@ def get_value(character, box_position, default_value):
         character.save()
         return default_value
     return value
+
+
+@ensure_csrf_cookie
+def case_files(request):
+    play_id = int(request.GET.get("play_id"))
+    play = Play.objects.get(id=play_id)
+    files = CaseFiles.objects.get(play_id=play_id)
+
+    cases = [
+        format_case(case)
+        for case in Case.objects.filter(play_id=play_id, visible=True)
+    ]
+
+    context = {
+        "title": f"{files.case_files_are_called.upper()} OF {play.name.upper()}",
+        "subtitle": files.case_files_subtitle,
+        "cases": cases,
+    }
+
+    return render(request, "cases.html", context)
+
+
+def format_case(case: Case):
+    people = Person.objects.filter(case=case, visible=True).order_by("sort_order")
+    locations = Location.objects.filter(case=case, visible=True).order_by("sort_order")
+
+    if case.image:
+        title = f'<img src="{case.image.url}" style="height: 70px; fit-image:contain;">'
+    else:
+        title = f"<strong>{case.name.upper()}</strong>"
+
+    return mark_safe(f"""
+    <details>
+        <summary>{title}</summary>
+        <table>
+        <tr>
+            {"".join(f"<td>{format_person(person)}</td>" for person in people)}
+            {"".join(f"<td>{format_location(location)}</td>" for location in locations)}
+        </tr>
+        </table>
+    </details>
+    """)
+
+
+def format_person(person: Person):
+    return f"""
+    <div style="background: radial-gradient(transparent 50%, white), url('{ person.image.url }');
+                 background-size: cover; width: 150px; height: 225px; margin: auto;">
+    </div>
+    <p><strong>{person.name}</strong></p>
+    <p>{person.description}</p>
+    <p>Notes:</p>
+    {format_notes(person, "p")}
+    """
+
+
+def format_location(location: Location):
+    return f"""
+        <p><strong>{location.name}</strong></p>
+        <p>{location.description}</p>
+        """
+
+
+def format_notes(obj, obj_type):
+    return f"""
+    <div id="{obj_type}{obj.id}" style="position:relative; width:100%">
+        <div class="notes asHTML" onclick="startEditNote(this);">{markdown(obj.player_notes or "")}
+        </div>
+        <div class="notes asMarkdown" contenteditable onblur="stopEditNote(this);"
+         style="visibility: hidden; white-space: pre-wrap;">{obj.player_notes or ""}</div>
+    </div>
+    """
+
+def update_notes(request):
+    data = json.loads(request.body)
+    note_id = data.get("noteId")
+    value = data.get("value")
+
+    model_map = {"p": Person, "l": Location}
+    obj = model_map[note_id[0]].objects.get(id=int(note_id[1:]))
+    obj.player_notes = value
+    obj.save()
+
+    return JsonResponse({"content": format_notes(obj, note_id[0])})
