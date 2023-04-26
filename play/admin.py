@@ -19,6 +19,18 @@ def view_case_files(play):
     return mark_safe(f'<a href="{reverse("case_files")}?play_id={play.id}">Case files</a>')
 
 
+def has_image(obj):
+    return "✔︎" if obj.image else ""
+
+
+def show(modeladmin, request, queryset):
+    queryset.update(visible=True)
+
+
+def hide(modeladmin, request, queryset):
+    queryset.update(visible=False)
+
+
 @register(Play)
 class PlayAdmin(admin.ModelAdmin):
     list_display = ("name", "game", all_characters, view_case_files)
@@ -46,17 +58,20 @@ class CaseFilesAdmin(admin.ModelAdmin):
 
 @register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = "name", "play"
+    list_display = "name", has_image, "visible", "play"
     list_filter = ("play",)
+    actions = show, hide
 
 
 @register(Person)
 class PersonAdmin(admin.ModelAdmin):
-    list_display = "name", "case"
+    list_display = "name", "description", has_image, "visible", "case"
     list_filter = "case", "case__play"
+    actions = show, hide
 
 
 @register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = "name", "case"
+    list_display = "name", "visible", "case"
     list_filter = "case", "case__play"
+    actions = show, hide
