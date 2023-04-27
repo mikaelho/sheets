@@ -1,0 +1,23 @@
+{% extends "admin/change_list.html" %}
+{% block extrahead %}{{ block.super }}
+<script>
+    function pasteImage(objType, objId) {
+        navigator.clipboard.read()
+        .then(
+            (items) => (items.forEach(item => {
+                    item.getType("image/png").then(imageBlob => {
+                        const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+                        fetch(`/save_image/${objType}/${objId}`, {
+                            method: 'POST',
+                            headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
+                            body: imageBlob
+                        }).then()
+
+                    })
+                })
+            )
+        );
+    }
+</script>
+{% endblock %}

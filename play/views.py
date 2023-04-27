@@ -1,11 +1,14 @@
+import io
 import json
 import os
 import uuid
 
+import play
 import requests
 from create.models import Box
 from create.models import BoxPosition
 from create.views import default_size_by_kind
+from django.core.files import File
 from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import render
@@ -13,6 +16,9 @@ from django.utils.safestring import mark_safe
 from django.views.decorators.csrf import ensure_csrf_cookie
 from markdown import markdown
 from play.admin import open_character
+from play.image_manipulation import add_noise
+from play.image_manipulation import convert_sepia
+from play.image_manipulation import open_image
 from play.models import Case
 from play.models import CaseFiles
 from play.models import Character
@@ -351,3 +357,20 @@ def update_notes(request):
     obj.save()
 
     return JsonResponse({"content": format_notes(obj, note_id[0])})
+
+
+def modify_and_save_image(request, type_id, obj_id):
+    type_obj = getattr(play.models, type_id)
+    obj = type_obj.objects.get(id=obj_id)
+
+    image_data = request.body
+    original = open_image(io.BytesIO(image_data))
+    sepia_image = convert_sepia(original)
+    add_noise(sepia_image)
+
+    image_bytes = io.BytesIO()
+    sepia_image.save(image_bytes, "png")
+    obj.image = File(image_bytes, name=f"{type_id}-{obj_id}.png")
+    obj.save()
+
+    return JsonResponse({"ok": True})

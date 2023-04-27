@@ -23,6 +23,12 @@ def has_image(obj):
     return "✔︎" if obj.image else ""
 
 
+def paste_image(obj):
+    return mark_safe(
+        f"""<div style="cursor: copy" onclick="pasteImage('{type(obj).__name__}', {obj.id});">Paste image</div>"""
+    )
+
+
 def show(modeladmin, request, queryset):
     queryset.update(visible=True)
 
@@ -65,7 +71,7 @@ class CaseAdmin(admin.ModelAdmin):
 
 @register(Person)
 class PersonAdmin(admin.ModelAdmin):
-    list_display = "name", "description", has_image, "visible", "case"
+    list_display = "name", "description", has_image, paste_image, "visible", "case"
     list_filter = "case", "case__play"
     actions = show, hide
 
