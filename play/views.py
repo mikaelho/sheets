@@ -308,10 +308,14 @@ def format_case(case: Case):
 
 
 def format_person(person: Person):
-    return f"""
+    image = f"""
     <div style="background: radial-gradient(transparent 50%, white), url('{ person.image.url }');
                  background-size: cover; width: 150px; height: 225px; margin: auto;">
     </div>
+    """ if person.image else ""
+
+    return f"""
+    {image}
     <p><strong>{person.name}</strong><br/>{person.description}</p>
     <span style="font-style: italic;">Notes:</span>
     {format_notes(person, "p")}
