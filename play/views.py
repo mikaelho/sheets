@@ -232,12 +232,15 @@ def report_roll_result(request):
     character_id = data.get("character_id")
     box_position_id = data.get("box_position_id")
     roll_result = data.get("roll_result")
-    character_name = str(Character.objects.get(id=character_id))
+    character = Character.objects.get(id=character_id)
+    character_name = str(character)
     attribute_name = BoxPosition.objects.get(id=box_position_id).box.name
 
     message = f"{character_name}\n{attribute_name}: {roll_result}"
     print(message)
-    requests.post(os.environ["DISCORD_WEBHOOK"], data={"content": message})
+
+    if discord_webhook_url := character.play.discord_webhook_url or os.environ.get("DISCORD_WEBHOOK"):
+        requests.post(discord_webhook_url, data={"content": message})
 
     return JsonResponse({"ok": True})
 
@@ -297,15 +300,15 @@ def format_case(case: Case):
     return mark_safe(f"""
     <details {'open="true"' if case.open else ""}>
         <summary>{title}</summary>
-        <h3>Case Notes</h3>
+        <h3 class="sectionTitle">Case Notes</h3>
         {format_notes(case, "c")}
 
-        <h3>Persons of Note</h3>
+        <h3 class="sectionTitle">Persons of Note</h3>
         <div class="gridWrap">
             {"".join(f'<div class="card">{format_person(person)}</div>' for person in people)}
         </div>
 
-        <h3>Places of Interest</h3>
+        <h3 class="sectionTitle">Places of Interest</h3>
         <div class="gridWrap">
             {"".join(f'<div class="card">{format_location(location)}</div>' for location in locations)}
         </div>

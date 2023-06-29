@@ -1,11 +1,15 @@
+{% load static  %}
 <html>
 <head>
     <style>
+        @font-face {font-family: 'Ingeborg'; src: local('Ingeborg Striped'), local('Ingeborg-Striped'), url({% static 'Ingeborg-Striped.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
+        @font-face {font-family: 'IngeborgHeavy'; src: local('Ingeborg-Heavy'), url({% static 'ingeborg-heavy.otf' %}) format('opentype'); font-weight: bold; font-style: normal;}
+        @font-face {font-family: 'CalendasPlus'; src: local('calendas'), url({% static 'calendas.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         :root {
           --main-color: #cbad84;
         }
         * {
-            font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
+            font-family: CalendasPlus, Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
         }
         body { background-color: var(--main-color); }
         details {background-color: white; padding: 20px; }
@@ -45,6 +49,8 @@
             box-shadow: 0 0.5rem 1rem #cbad8444;
             border-radius: 4px; padding: 10px;
         }
+        .pageTitle {font-family: Ingeborg; font-size: 40px;}
+        .sectionTitle {font-family: IngeborgHeavy; font-size: 20px;}
     </style>
     <script>
         function startEditNote(element) {
@@ -67,7 +73,7 @@
 </head>
 <body>
     {% csrf_token %}
-    <h3>{{ title }}</h3>
+    <p class="pageTitle">{{ title }}</p>
     <p>{{ subtitle }}</p>
     {% for case in cases %}
         {{ case }}
