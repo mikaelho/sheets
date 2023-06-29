@@ -1,12 +1,16 @@
 <!-- https://css-tricks.com/a-table-with-both-a-sticky-header-and-a-sticky-first-column/ -->
+{% load static  %}
 <head>
     <style>
+        @font-face {font-family: 'Ingeborg'; src: local('Ingeborg Striped'), local('Ingeborg-Striped'), url({% static 'Ingeborg-Striped.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
+        @font-face {font-family: 'IngeborgHeavy'; src: local('Ingeborg-Heavy'), url({% static 'ingeborg-heavy.otf' %}) format('opentype'); font-weight: bold; font-style: normal;}
+        @font-face {font-family: 'CalendasPlus'; src: local('calendas'), url({% static 'calendas.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         :root {
           --main-color: #cbad84;
         }
         body { background-color: var(--main-color); }
         table {
-          font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
+          font-family: CalendasPlus, Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
           /*font-size: 125%;*/
           margin: 0;
           border-collapse: separate;
@@ -80,6 +84,8 @@
             transition: bottom 0.5s;
             z-index: 1000;
         }
+        .pageTitle {font-family: Ingeborg; font-size: 40px;}
+        .sectionTitle {font-family: IngeborgHeavy; font-size: 20px;}
     </style>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
     <script>
@@ -117,7 +123,7 @@
 <body onload="initialize();">
     <table>
         <thead>
-            <th>{{ play_name|upper }}</th>
+            <th class="pageTitle">{{ play_name|upper }}</th>
             {% for character in characters %}
                 <th>
                     {% if character.image_link %}
@@ -126,7 +132,7 @@
                                      background-size: cover; width: 150px; height: 225px; margin: auto;">
                         </div>
                     {% endif %}
-                    <p>{{ character.name }} - {{ character.playbook }} {{ character.play_link }}</p>
+                    <p><span class="sectionTitle">{{ character.name }} - {{ character.playbook }}</span> {{ character.play_link }}</p>
                 </th>
             {% endfor %}
         </thead>
