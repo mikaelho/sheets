@@ -7,6 +7,7 @@ from django.db import models
 class Play(models.Model):
     name = models.CharField(max_length=50)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
+    discord_webhook_url = models.CharField(max_length=200, blank=True, null=True)
 
     def __str__(self):
         return self.name
