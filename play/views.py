@@ -188,6 +188,21 @@ def edit_character(request):
                             value="{value['content']}" {change}>
                     </div>
                 """
+            elif box_position.box.kind == Box.Kind.MAP_PIN:
+                if (meta := box_position.box.meta) and meta.get("hidden"):
+                    continue
+                widgets += f"""
+                    <div class="pin" style="position: absolute; left: {box_position.left+8}px; top: {box_position.top-16}px;">
+                    </div>
+                    <div style="
+                        position: absolute; left: {box_position.left+14}px; top: {box_position.top+20}px;
+                        transform: translate(-50%, 0);
+                        text-shadow: white 1px 1px, white -1px -1px, white 1px 1px 5px;
+                        font-family: IngeborgHeavy; font-size: 18px;
+                    ">
+                    {box_position.box.name}
+                    </div>
+                """
 
         sheets.append({
             "left": f"{left}pt",

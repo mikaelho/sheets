@@ -114,6 +114,7 @@ default_size_by_kind = {
     Box.Kind.CHECKABLE_TEXT_FIELD: (210, 20),
     Box.Kind.OVERLAY: (200, 200),
     Box.Kind.MOVE: (210, 20),
+    Box.Kind.MAP_PIN: (35, 35),
 }
 
 

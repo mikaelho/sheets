@@ -49,6 +49,7 @@ class Box(models.Model):
         LIST = "list"
         MANY_CHECKBOXES_AND_TEXT_FIELDS = "many_checkboxes_and_text_fields"
         CLEAR_BUTTON = "clear_button"
+        MAP_PIN = "map_pin"
 
     name = models.CharField(max_length=200)
     group = models.CharField(max_length=50, null=True, blank=True)

@@ -1,10 +1,13 @@
 {% load static  %}
 <head>
     <style>
+        @font-face {font-family: 'Ingeborg'; src: local('Ingeborg Striped'), local('Ingeborg-Striped'), url({% static 'Ingeborg-Striped.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
+        @font-face {font-family: 'IngeborgHeavy'; src: local('Ingeborg-Heavy'), url({% static 'ingeborg-heavy.otf' %}) format('opentype'); font-weight: bold; font-style: normal;}
+        @font-face {font-family: 'CalendasPlus'; src: local('calendas'), url({% static 'calendas.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         * {
             padding: 0;
             margin: 0;
-            font-family: Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
+            font-family: CalendasPlus, Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
         }
         div {position: absolute; user-select: none;}
         iframe {position: absolute}
@@ -32,6 +35,23 @@
             background-color: black; color: white;
             text-align: center; font-size: 32px;
             transition: bottom 0.5s;
+        }
+        .pin {
+            border-radius: 50%;
+            border: 8px solid #880808;
+            width: 8px;
+            height: 8px;
+        }
+
+        .pin::after {
+            position: absolute;
+            content: '';
+            width: 0px;
+            height: 0px;
+            bottom: -30px;
+            left: -6px;
+            border: 10px solid transparent;
+            border-top: 17px solid #880808;
         }
     </style>
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
