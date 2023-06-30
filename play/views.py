@@ -314,7 +314,7 @@ def format_case(case: Case):
     return mark_safe(f"""
     <details {'open="true"' if case.open else ""}>
         <summary>{title}</summary>
-        <h3 class="sectionTitle">Case Notes</h3>
+        <h3 class="sectionTitle">Notes</h3>
         {format_notes(case, "c")}
 
         {people_html}
