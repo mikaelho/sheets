@@ -295,7 +295,21 @@ def format_case(case: Case):
     if case.image:
         title = f'<img src="{case.image.url}" style="height: 70px; fit-image:contain;">'
     else:
-        title = f"<strong>{case.name.upper()}</strong>"
+        title = f'<span class="caseTitle">{case.name.upper()}</span>'
+
+    people_html = f"""
+        <h3 class="sectionTitle">Persons of Note</h3>
+        <div class="gridWrap">
+            {"".join(f'<div class="card">{format_person(person)}</div>' for person in people)}
+        </div>
+    """ if people.count() else ""
+
+    location_html = f"""
+        <h3 class="sectionTitle">Places of Interest</h3>
+        <div class="gridWrap">
+            {"".join(f'<div class="card">{format_location(location)}</div>' for location in locations)}
+        </div>
+    """ if locations.count() else ""
 
     return mark_safe(f"""
     <details {'open="true"' if case.open else ""}>
@@ -303,15 +317,9 @@ def format_case(case: Case):
         <h3 class="sectionTitle">Case Notes</h3>
         {format_notes(case, "c")}
 
-        <h3 class="sectionTitle">Persons of Note</h3>
-        <div class="gridWrap">
-            {"".join(f'<div class="card">{format_person(person)}</div>' for person in people)}
-        </div>
-
-        <h3 class="sectionTitle">Places of Interest</h3>
-        <div class="gridWrap">
-            {"".join(f'<div class="card">{format_location(location)}</div>' for location in locations)}
-        </div>
+        {people_html}
+        
+        {location_html}
     </details>
     """)
 
