@@ -26,6 +26,8 @@
             font-size: 24px; font-weight: bold; color: black;
         }
         .larger {font-size: 34px;}
+        .smaller {font-size: 18px;}
+        .translucent {border: 1px solid #759FEA;}
         .rollButton:hover {background-color: #c6d1f6;}
         .rollSelected {background-color: #759FEA}
         .rollSelected:hover {background-color: #90b1e7}
@@ -107,14 +109,15 @@
         }
 
         function showActions(event, character_id, box_position_id) {
-            const actions = event.target.parentElement.getElementsByClassName("actions")[0];
-            if (actions.style.visibility === "hidden") {
-                actions.style.visibility = "visible";
-                event.target.parentElement.getElementsByClassName("actions")[1].style.visibility = "visible";
-                somethingHappened()
-            } else {
-                showRoller(event, character_id, box_position_id);
-            }
+            showRoller(event, character_id, box_position_id);
+            //const actions = event.target.parentElement.getElementsByClassName("actions")[0];
+            //if (actions.style.visibility === "hidden") {
+            //    actions.style.visibility = "visible";
+            //    event.target.parentElement.getElementsByClassName("actions")[1].style.visibility = "visible";
+            //    somethingHappened();
+            //} else {
+            //    showRoller(event, character_id, box_position_id);
+            //}
         }
 
         function somethingHappened() {
@@ -312,15 +315,11 @@
          onclick="this.style.visibility = 'hidden'; document.getElementById('rollingCenter').style.visibility = 'hidden';"
     >
         <div id="rollingCenter" style="position: absolute; width: 1px; height: 1px;">
-            <div class="rollButton larger" onclick="roll(event);" style="left:-20px; top: -20px">⚅</div>
-            <div class="rollButton larger" onclick="rollSelect(event, this);" style="left:30px; top: -20px">+</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:15px; top: -55px">+1</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: -70px">+2</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-55px; top: -55px">+3</div>
-            <div class="rollButton larger" onclick="rollSelect(event, this);" style="left:-70px; top: -20px">–</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-55px; top: 15px">-1</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: 30px">-2</div>
-            <div class="rollButton" onclick="rollSelect(event,  this);" style="left:15px; top: 15px">-3</div>
+            <div class="rollButton translucent" onclick="roll(event);" style="left:-20px; top: -20px"></div>
+            <div class="rollButton smaller" onclick="rollSelect(event, this);" style="left:30px; top: -20px">ADV</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: -70px">▲</div>
+            <div class="rollButton smaller" onclick="rollSelect(event, this);" style="left:-70px; top: -20px">DIS</div>
+            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: 30px">▼</div>
         </div>
     </div>
     <div id="rollerLayer" style="position:fixed; top:0; left: 0; bottom: 0; right: 0; visibility: hidden;">
