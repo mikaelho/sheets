@@ -59,6 +59,7 @@
     <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
     <script>
         const rollSelection = {};
+        let throwType;
         let timeToHide;
         let pubnub;
 
@@ -131,11 +132,13 @@
             }
         }
 
-        function incrementValue(element, character_id, box_position_id, increment) {
-            const valueContainer = element.getElementsByClassName("valueContainer")[0];
+        function incrementValue(event, element, increment) {
+            character_id = rollSelection.character_id;
+            box_position_id = rollSelection.box_position_id;
+            const valueContainer = document.getElementById("box" + box_position_id).getElementsByClassName("valueContainer")[0];
             let newValue = parseInt(valueContainer.innerText) + increment;
             valueContainer.innerText = newValue.toString();
-            somethingHappened();
+            hideAllActions();
             submitHandler(newValue, character_id, box_position_id);
         }
 
@@ -189,7 +192,8 @@
             });
         }
 
-        function roll(event) {
+        function roll(event, buttonAction) {
+            throwType = buttonAction;
             event.stopPropagation();
             const rollSelectionElement = event.target.parentElement;
             rollSelectionElement.style.visibility = "hidden";
@@ -197,7 +201,7 @@
             const rollerDocument = roller.contentWindow.document;
             roller.contentWindow.resultCallback = resultCallback;
             const diceSelection = rollerDocument.getElementById("set");
-            if ("+" in rollSelection || "–" in rollSelection) {
+            if (throwType === "disadvantage" || throwType === "advantage") {
                 diceSelection.value = "3d6";
             } else {
                 diceSelection.value = "2d6";
@@ -210,9 +214,9 @@
 
         function resultCallback(result) {
             let valueToDrop;
-            if ("+" in rollSelection) {
+            if (throwType === "advantage") {
                 valueToDrop = Math.min(...result);
-            } else if ("–" in rollSelection) {
+            } else if (throwType === "disadvantage") {
                 valueToDrop = Math.max(...result);
             }
             if (valueToDrop) {
@@ -226,10 +230,6 @@
                 }
                 result.push(attributeValue);
             }
-
-            ["+1", "+2", "+3", "-1", "-2", "-3"].forEach(bonusMalus => {
-                if (bonusMalus in rollSelection) {result.push(bonusMalus);}
-            });
 
             let total = 0;
             for (let i = 0; i < result.length; i++) {
@@ -315,11 +315,11 @@
          onclick="this.style.visibility = 'hidden'; document.getElementById('rollingCenter').style.visibility = 'hidden';"
     >
         <div id="rollingCenter" style="position: absolute; width: 1px; height: 1px;">
-            <div class="rollButton translucent" onclick="roll(event);" style="left:-20px; top: -20px"></div>
-            <div class="rollButton smaller" onclick="rollSelect(event, this);" style="left:30px; top: -20px">ADV</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: -70px">▲</div>
-            <div class="rollButton smaller" onclick="rollSelect(event, this);" style="left:-70px; top: -20px">DIS</div>
-            <div class="rollButton" onclick="rollSelect(event, this);" style="left:-20px; top: 30px">▼</div>
+            <div class="rollButton translucent" onclick="roll(event, 'roll');" style="left:-20px; top: -20px"></div>
+            <div class="rollButton smaller" onclick="roll(event, 'advantage');" style="left:30px; top: -20px">ADV</div>
+            <div class="rollButton" onclick="incrementValue(event, this, +1);" style="left:-20px; top: -70px">▲</div>
+            <div class="rollButton smaller" onclick="roll(event, 'disadvantage');" style="left:-70px; top: -20px">DIS</div>
+            <div class="rollButton" onclick="incrementValue(event, this, -1);" style="left:-20px; top: 30px">▼</div>
         </div>
     </div>
     <div id="rollerLayer" style="position:fixed; top:0; left: 0; bottom: 0; right: 0; visibility: hidden;">

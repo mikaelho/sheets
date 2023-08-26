@@ -122,15 +122,12 @@ def edit_character(request):
                 decrement_click = f'{on_click_shared}, -1);"'
 
                 widgets += f"""
-                    <div style="position: absolute; {get_position(box_position, adjust_left=2, adjust_top=1)};">
+                    <div id="box{box_position.id}" style="position: absolute; {get_position(box_position, adjust_left=2, adjust_top=1)};">
                         <button class="valueContainer" style="{absolute_100}; {get_font(32)};" {select_events}>
                             {value}
                         </button>
                         <button class="actions" style="left: 0; top: -{width}px; {absolute_100}; background-color: transparent; visibility: hidden;" {increment_click}>▲</button>
                         <button class="actions" style="left: 0; bottom: -{width}px; {absolute_100}; background-color: transparent; visibility: hidden" {decrement_click}>▼</button>
-                        <!--<div style="{full_size_center};"
-                                onclick="showRoller(event, {character_id}, {box_position.id});"
-                            ></div>-->
                     </div>
                 """
             elif box_position.box.kind == Box.Kind.CHECKBOX:
