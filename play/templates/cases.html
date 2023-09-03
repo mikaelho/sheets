@@ -52,8 +52,46 @@
         .pageTitle {font-family: Ingeborg; font-size: 40px;}
         .sectionTitle {font-family: IngeborgHeavy; font-size: 20px;}
         .caseTitle {font-family: Ingeborg; font-size: 32px;}
+        .toast {
+            position: fixed; width: 100%; height: 60px; bottom: -60px;
+            background-color: black; color: white;
+            text-align: center; font-size: 32px;
+            transition: bottom 0.5s;
+            z-index: 1000;
+        }
     </style>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
     <script>
+        let pubnub;
+
+        function initialize() {
+            pubnub = new PubNub({
+                publishKey : "{{ publish_key }}",
+                subscribeKey : "{{ subscribe_key }}",
+                userId: "{{ user_id }}"
+            });
+
+            pubnub.addListener({
+                message: (messageEvent) => {
+                    showMessage(messageEvent.message.content);
+                },
+            });
+
+            pubnub.subscribe({channels: ["game"]});
+        }
+
+        function showMessage(message) {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.innerText = message;
+            toast.style.bottom = "0px";
+            setTimeout(hideMessage, 6000);
+        }
+
+        function hideMessage() {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.style.bottom = "-60px";
+        }
+
         function startEditNote(element) {
             element.style.display = "none";
             const markdown = element.parentElement.getElementsByClassName("asMarkdown")[0];
@@ -72,12 +110,13 @@
         }
     </script>
 </head>
-<body>
+<body onload="initialize();">
     {% csrf_token %}
     <p class="pageTitle">{{ title }}</p>
     <p>{{ subtitle }}</p>
     {% for case in cases %}
         {{ case }}
     {% endfor %}
+    <div class="toast"></div>
 </body>
 </html>

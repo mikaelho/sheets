@@ -295,6 +295,9 @@ def case_files(request):
         "title": f"{files.case_files_are_called.upper()} OF {play.name.upper()}",
         "subtitle": files.case_files_subtitle,
         "cases": cases,
+        "publish_key": os.environ["PUBNUB_PUBLISH"],
+        "subscribe_key": os.environ["PUBNUB_SUBSCRIBE"],
+        "user_id": str(uuid.uuid4()),
     }
 
     return render(request, "cases.html", context)
