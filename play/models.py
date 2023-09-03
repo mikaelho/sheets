@@ -49,6 +49,7 @@ class CaseFiles(models.Model):
 
 class Case(models.Model):
     name = models.CharField(max_length=50)
+    sort_order = models.PositiveIntegerField(null=True, blank=True)
     play = models.ForeignKey(Play, on_delete=models.CASCADE)
     image = models.FileField(upload_to="people_images", null=True, blank=True)
     visible = models.BooleanField(default=False, null=True)

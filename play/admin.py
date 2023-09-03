@@ -64,20 +64,21 @@ class CaseFilesAdmin(admin.ModelAdmin):
 
 @register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = "name", has_image, "visible", "play"
+    list_display = "name", "sort_order", has_image, "visible", "play"
     list_filter = ("play",)
+    ordering = ["-sort_order"]
     actions = show, hide
 
 
 @register(Person)
 class PersonAdmin(admin.ModelAdmin):
-    list_display = "name", "description", has_image, paste_image, "visible", "case"
+    list_display = "name", "description", "sort_order", has_image, paste_image, "visible", "case"
     list_filter = "case", "case__play"
     actions = show, hide
 
 
 @register(Location)
 class LocationAdmin(admin.ModelAdmin):
-    list_display = "name", "visible", "case"
+    list_display = "name", "sort_order", "visible", "case"
     list_filter = "case", "case__play"
     actions = show, hide

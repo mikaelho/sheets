@@ -3,6 +3,8 @@ import json
 import os
 import uuid
 
+from django.db.models import F
+
 import play
 import requests
 from create.models import Box
@@ -288,7 +290,7 @@ def case_files(request):
 
     cases = [
         format_case(case)
-        for case in Case.objects.filter(play_id=play_id, visible=True)
+        for case in Case.objects.filter(play_id=play_id, visible=True).order_by("-sort_order")
     ]
 
     context = {
@@ -304,8 +306,8 @@ def case_files(request):
 
 
 def format_case(case: Case):
-    people = Person.objects.filter(case=case, visible=True).order_by("sort_order")
-    locations = Location.objects.filter(case=case, visible=True).order_by("sort_order")
+    people = Person.objects.filter(case=case, visible=True).order_by(F("sort_order").asc(nulls_last=True))
+    locations = Location.objects.filter(case=case, visible=True).order_by(F("sort_order").asc(nulls_last=True))
 
     if case.image:
         title = f'<img src="{case.image.url}" style="height: 70px; fit-image:contain;">'
