@@ -14,6 +14,7 @@
         body { background-color: var(--main-color); }
         details {background-color: white; padding: 20px; border-top: 1px solid var(--main-color); }
         summary { padding-bottom: 10px; }
+        summary::marker {color: var(--main-color);}
         table tr td {
           border-right: 1px solid var(--main-color);
           padding: 10px;
@@ -22,9 +23,6 @@
         }
         table tr td:last-of-type {
           border: none;
-        }
-        summary::marker {
-          content: "";
         }
         .notes { min-height: 50px; }
         .asMarkdown { padding: 4px; }
