@@ -53,7 +53,7 @@ def open_character(character):
 
 @register(Character)
 class CharacterAdmin(admin.ModelAdmin):
-    list_display = ("__str__", open_character, "playbook", "play", "player")
+    list_display = ("__str__", open_character, "playbook", paste_image, "play", "player")
     list_filter = "playbook", "play", "player"
 
 
@@ -64,7 +64,7 @@ class CaseFilesAdmin(admin.ModelAdmin):
 
 @register(Case)
 class CaseAdmin(admin.ModelAdmin):
-    list_display = "name", "sort_order", has_image, "visible", "play"
+    list_display = "name", "sort_order", has_image, paste_image, "visible", "play"
     list_filter = ("play",)
     ordering = ["-sort_order"]
     actions = show, hide
