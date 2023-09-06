@@ -41,7 +41,7 @@ def game_view(request):
 
     characters = [{
         "name": str(character),
-        "image_link": character.image.url,
+        "image_link": character.image and character.image.url or "",
         "play_link": open_character(character),
         "player": character.player.name,
         "playbook": character.playbook.name,
