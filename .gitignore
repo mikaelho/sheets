@@ -17,3 +17,5 @@ database_up
 files_up
 db_dump_down
 code_up
+static/springyui.js
+static/demo.html

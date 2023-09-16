@@ -3,12 +3,15 @@ import json
 import os
 import uuid
 
+from django.contrib.contenttypes.models import ContentType
+from django.core import serializers
 from django.db.models import F
 
 import play
 import requests
 from create.models import Box
 from create.models import BoxPosition
+from create.models import Playbook
 from create.views import default_size_by_kind
 from django.core.files import File
 from django.db.models import Q
@@ -402,3 +405,62 @@ def modify_and_save_image(request, type_id, obj_id):
     obj.save()
 
     return JsonResponse({"ok": True})
+
+
+graph_relationships = {
+    Case: ["play", "person_set", "location_set"],
+    Character: ["play", "playbook"],
+    Location: ["case"],
+    Person: ["case"],
+    Play: ["case_set", "character_set"],
+    Playbook: [],
+}
+
+def get_graph(request, model_name, instance_id):
+    seen = set()
+    to_process = [(model_name, instance_id)]
+    return_value = []
+
+    while next_to_process := to_process.pop(0) if len(to_process) else False:
+        model_name, instance_id = next_to_process
+        seen.add((model_name, instance_id))
+        model_content_type = ContentType.objects.get_by_natural_key(*(model_name.split(".")))
+        model = model_content_type.model_class()
+        instance = model.objects.get(id=instance_id)
+
+        edges = []
+
+        for attribute in graph_relationships[model]:
+            value = getattr(instance, attribute)
+            if hasattr(value, "all") and callable(value.all):
+                value = value.all()
+            else:
+                value = [value]
+            for related_instance in value:
+                related_content_type = ContentType.objects.get_for_model(related_instance)
+                related_model_name = f"{related_content_type.app_label}.{related_content_type.model}"
+                edges.append([f"{model_name}-{instance_id}", f"{related_model_name}-{related_instance.pk}"])
+                consider_processing(related_instance, to_process, seen)
+
+        return_value.append({"node": serialize_instance(model, instance_id), "edges": edges})
+
+        # else:  # Add type and possibly all instances of type
+        #
+        #     if model in graph_relationships:
+        #         return_value.append({"model": model_name, "display_name": model_content_type.name})
+        #
+        #     if distance > 0:
+        #         for instance in model.objects.all():
+        #             consider_processing(instance, to_process, seen, distance)
+
+    return return_value
+
+def consider_processing(instance, to_process, seen):
+    content_type = ContentType.objects.get_for_model(instance)
+    natural_key = f"{content_type.app_label}.{content_type.model}"
+    if not (natural_key, instance.id) in seen:
+        to_process.append((natural_key, instance.id))
+
+
+def serialize_instance(model, instance_id):
+    return json.loads(serializers.serialize("jsonl", model.objects.filter(pk=instance_id)))
