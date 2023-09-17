@@ -19,6 +19,10 @@ def view_case_files(play):
     return mark_safe(f'<a href="{reverse("case_files")}?play_id={play.id}">Case files</a>')
 
 
+def graph(play):
+    return mark_safe(f'<a href="{reverse("graph")}?play_id={play.id}">Graph</a>')
+
+
 def has_image(obj):
     return "✔︎" if obj.image else ""
 
@@ -39,7 +43,7 @@ def hide(modeladmin, request, queryset):
 
 @register(Play)
 class PlayAdmin(admin.ModelAdmin):
-    list_display = ("name", "game", all_characters, view_case_files)
+    list_display = ("name", "game", all_characters, view_case_files, graph)
 
 
 @register(Player)

@@ -1,0 +1,118 @@
+{% load static  %}
+<head>
+    <script src="{% static 'springy.js' %}"></script>
+    <style>
+        body {background-color: black;}
+        div {position: absolute;}
+        .node {background-color: lightcoral; color: black; padding: 8px; border-radius: 4px;}
+        .edge {width: 1px; background-color: grey; transform-origin: top left;}
+        .playplay {background-color: #DEE8BC}
+        .playcharacter {background-color: #E4FFCF;}
+        .createplaybook {background-color: #E4FFCF}
+        .playcase {background-color: #FFFEDC}
+        .playperson {background-color: #E8E2BC}
+        .playlocation {background-color: #FFF4CF}
+    </style>
+    <script>
+
+    </script>
+
+</head>
+<body>
+    {% csrf_token %}
+    <div id="main" style="width: 100%; height: 100%;"></div>
+    <script>
+        const nodeLookup = {};
+        const graph = new Springy.Graph();
+
+        const graphData = {{ graph_json }};
+        console.log(graphData);
+        const mainElement = document.getElementById("main");
+
+        // Create graph nodes
+        graphData.nodes.forEach(nodeData => {
+            if (nodeData.fields.name) {
+                const nodeID = nodeData.model + "-" + nodeData.pk;
+                const node = new Springy.Node(nodeID, {label: nodeData.fields.name});
+                graph.addNode(node);
+                nodeLookup[nodeID] = node;
+            } else {
+                console.log("No name for " + nodeData.model + " - " + nodeData.pk);
+            }
+        });
+
+        // Create graph edges and edge divs
+        graphData.edges.forEach(edgeData => {
+            const edgeID = edgeData[0] + edgeData[1];
+            const source = nodeLookup[edgeData[0]];
+            const target = nodeLookup[edgeData[1]];
+            const edge = new Springy.Edge(edgeID, source, target);
+            graph.addEdge(edge);
+
+            const edgeElement = document.createElement("div");
+            mainElement.appendChild(edgeElement);
+            edgeElement.id = edgeID;
+            edgeElement.className = "edge";
+        });
+
+        // Create node divs
+        graphData.nodes.forEach(nodeData => {
+            const nodeID = nodeData.model + "-" + nodeData.pk;
+            const nodeElement = document.createElement("div");
+            mainElement.appendChild(nodeElement);
+            nodeElement.id = nodeID;
+            nodeElement.className = "node " + nodeData.model.replace(".", "");
+            nodeElement.innerHTML = nodeData.fields.name;
+        });
+
+        const layout = new Springy.Layout.ForceDirected(
+          graph,
+          400.0, // Spring stiffness
+          400.0, // Node repulsion
+          0.5 // Damping
+        );
+
+        function toScreen(p) {
+            const main = document.getElementById("main");
+            const currentBB = layout.getBoundingBox();
+            const size = currentBB.topright.subtract(currentBB.bottomleft);
+            const sx = p.subtract(currentBB.bottomleft).divide(size.x).x * main.clientWidth;
+            const sy = p.subtract(currentBB.bottomleft).divide(size.y).y * main.clientHeight;
+            return new Springy.Vector(sx, sy);
+        }
+
+        const renderer = new Springy.Renderer(
+          layout,
+          function clear() {
+            // code to clear screen
+          },
+          function drawEdge(edge, p1, p2) {
+              const s1 = toScreen(p1);
+              const s2 = toScreen(p2);
+              const edgeVector = s2.subtract(s1);
+              const magnitude = edgeVector.magnitude();
+              const angle = edgeVector.radians() - Math.PI/2;
+
+              const edgeElement = document.getElementById(edge.id);
+              edgeElement.style.height = magnitude + "px";
+              edgeElement.style.left = s1.x;
+              edgeElement.style.top = s1.y;
+              edgeElement.style.transform = "rotate(" + angle + "rad)";
+
+            //console.log(source.data.label, target.data.label, magnitude, angle);
+          },
+          function drawNode(node, p) {
+              const nodeElement = document.getElementById(node.id);
+              const screenPosition = toScreen(p);
+              const left = screenPosition.x - nodeElement.clientWidth / 2;
+              const top = screenPosition.y - nodeElement.clientHeight / 2;
+              nodeElement.style.left = left + "px";
+              nodeElement.style.top = top + "px";
+              // console.log(node.data.label, left, top);
+            // console.log(JSON.stringify(node.data.label), JSON.stringify(p));
+          }
+        );
+
+        renderer.start();
+    </script>
+</body>

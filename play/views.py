@@ -407,6 +407,18 @@ def modify_and_save_image(request, type_id, obj_id):
     return JsonResponse({"ok": True})
 
 
+
+
+
+def graph_view(request):
+    play_id = int(request.GET.get("play_id"))
+    graph_data = get_graph("play.play", play_id)
+
+    context = {"graph_json": mark_safe(json.dumps(graph_data))}
+
+    return render(request, "graph.html", context)
+
+
 graph_relationships = {
     Case: ["play", "person_set", "location_set"],
     Character: ["play", "playbook"],
@@ -416,10 +428,12 @@ graph_relationships = {
     Playbook: [],
 }
 
-def get_graph(request, model_name, instance_id):
+
+def get_graph(model_name, instance_id):
     seen = set()
     to_process = [(model_name, instance_id)]
-    return_value = []
+    nodes = []
+    edges = []
 
     while next_to_process := to_process.pop(0) if len(to_process) else False:
         model_name, instance_id = next_to_process
@@ -427,8 +441,6 @@ def get_graph(request, model_name, instance_id):
         model_content_type = ContentType.objects.get_by_natural_key(*(model_name.split(".")))
         model = model_content_type.model_class()
         instance = model.objects.get(id=instance_id)
-
-        edges = []
 
         for attribute in graph_relationships[model]:
             value = getattr(instance, attribute)
@@ -442,18 +454,12 @@ def get_graph(request, model_name, instance_id):
                 edges.append([f"{model_name}-{instance_id}", f"{related_model_name}-{related_instance.pk}"])
                 consider_processing(related_instance, to_process, seen)
 
-        return_value.append({"node": serialize_instance(model, instance_id), "edges": edges})
+        node = serialize_instance(model, instance_id)
+        if model is Character:
+            node["fields"]["name"] = str(instance)
+        nodes.append(node)
 
-        # else:  # Add type and possibly all instances of type
-        #
-        #     if model in graph_relationships:
-        #         return_value.append({"model": model_name, "display_name": model_content_type.name})
-        #
-        #     if distance > 0:
-        #         for instance in model.objects.all():
-        #             consider_processing(instance, to_process, seen, distance)
-
-    return return_value
+    return {"nodes": nodes, "edges": edges}
 
 def consider_processing(instance, to_process, seen):
     content_type = ContentType.objects.get_for_model(instance)

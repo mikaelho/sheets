@@ -24,6 +24,7 @@ from django.urls import re_path
 from play.views import case_files
 from play.views import edit_character
 from play.views import game_view
+from play.views import graph_view
 from play.views import modify_and_save_image
 from play.views import report_roll_result
 from play.views import submit_value
@@ -39,6 +40,7 @@ urlpatterns = [
     path("submit_value", submit_value, name="submit_value"),
     path("report_roll", report_roll_result, name="report_roll"),
     path("case_files", case_files, name="case_files"),
+    path("graph", graph_view, name="graph"),
     path("update_note", update_notes, name="update_note"),
     re_path(r"save_image/(?P<type_id>\w+)/(?P<obj_id>\d+)", modify_and_save_image, name="save_image"),
     path("admin/", admin.site.urls),
