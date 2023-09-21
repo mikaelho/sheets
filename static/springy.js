@@ -1,7 +1,7 @@
 /**
  * Springy v2.7.1
  *
- * Copyright (c) 2010-2013 Dennis Hotson
+ * Copyright (c) 2010-2013 Dennis Hotson, 2022 Mikael Honkala
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -157,43 +157,6 @@
 		return edge;
 	};
 
-
-	// add nodes and edges from JSON object
-	Graph.prototype.loadJSON = function(json) {
-	/**
-	Springy's simple JSON format for graphs.
-
-	historically, Springy uses separate lists
-	of nodes and edges:
-
-		{
-			"nodes": [
-				"center",
-				"left",
-				"right",
-				"up",
-				"satellite"
-			],
-			"edges": [
-				["center", "left"],
-				["center", "right"],
-				["center", "up"]
-			]
-		}
-
-	**/
-		// parse if a string is passed (EC5+ browsers)
-		if (typeof json == 'string' || json instanceof String) {
-			json = JSON.parse( json );
-		}
-
-		if ('nodes' in json || 'edges' in json) {
-			this.addNodes.apply(this, json['nodes']);
-			this.addEdges.apply(this, json['edges']);
-		}
-	}
-
-
 	// find the edges from node1 to node2
 	Graph.prototype.getEdges = function(node1, node2) {
 		if (node1.id in this.adjacency
@@ -337,6 +300,8 @@
 
 		this.nodePoints = {}; // keep track of points associated with nodes
 		this.edgeSprings = {}; // keep track of springs associated with edges
+
+		this.selected = null;
 	};
 
 	Layout.ForceDirected.prototype.point = function(node) {
@@ -362,7 +327,7 @@
 			}, this);
 
 			if (existingSpring !== false) {
-				return new Layout.ForceDirected.Spring(existingSpring.point1, existingSpring.point2, 0.0, 0.0);
+				return new Layout.ForceDirected.Spring(existingSpring.point1, existingSpring.point2, 0.0, 0.0, edge.source, edge.target);
 			}
 
 			var to = this.graph.getEdges(edge.target, edge.source);
@@ -373,11 +338,11 @@
 			}, this);
 
 			if (existingSpring !== false) {
-				return new Layout.ForceDirected.Spring(existingSpring.point2, existingSpring.point1, 0.0, 0.0);
+				return new Layout.ForceDirected.Spring(existingSpring.point2, existingSpring.point1, 0.0, 0.0, edge.source, edge.target);
 			}
 
 			this.edgeSprings[edge.id] = new Layout.ForceDirected.Spring(
-				this.point(edge.source), this.point(edge.target), length, this.stiffness
+				this.point(edge.source), this.point(edge.target), length, this.stiffness, edge.source, edge.target
 			);
 		}
 
@@ -415,13 +380,19 @@
 			this.eachNode(function(n2, point2) {
 				if (point1 !== point2)
 				{
-					var d = point1.p.subtract(point2.p);
-					var distance = d.magnitude() + 0.1; // avoid massive forces at small distances (and divide by zero)
-					var direction = d.normalise();
+					const d = point1.p.subtract(point2.p);
+					//const effectiveDistance = this.effectiveDistance(d, n1, n2);
+					//const distance = effectiveDistance + 0.1; // avoid massive forces at small distances (and divide by zero)
+					const distance = d.magnitude() + 0.1;
+					const direction = d.normalise();
 
-					// apply force to each end point
-					point1.applyForce(direction.multiply(this.repulsion).divide(distance * distance * 0.5));
-					point2.applyForce(direction.multiply(this.repulsion).divide(distance * distance * -0.5));
+					// apply force to each end point, except selected which is left to gravitate to center
+					if (n1 !== this.selected) {
+						point1.applyForce(direction.multiply(this.repulsion).divide(distance * distance * 0.5));
+					}
+					if (n2 !== this.selected) {
+						point2.applyForce(direction.multiply(this.repulsion).divide(distance * distance * -0.5));
+					}
 				}
 			});
 		});
@@ -429,13 +400,19 @@
 
 	Layout.ForceDirected.prototype.applyHookesLaw = function() {
 		this.eachSpring(function(spring){
-			var d = spring.point2.p.subtract(spring.point1.p); // the direction of the spring
-			var displacement = spring.length - d.magnitude();
-			var direction = d.normalise();
+			const d = spring.point2.p.subtract(spring.point1.p); // the direction of the spring
+			//const effectiveMagnitude = layout.effectiveDistance(d, spring.node1, spring.node2);
+			//const displacement = spring.length - effectiveMagnitude;
+			const displacement = spring.length - d.magnitude();
+			const direction = d.normalise();
 
-			// apply force to each end point
-			spring.point1.applyForce(direction.multiply(spring.k * displacement * -0.5));
-			spring.point2.applyForce(direction.multiply(spring.k * displacement * 0.5));
+			// apply force to each end point, except if it is connected to selected node
+			if (spring.node1 !== this.selected) {
+				spring.point1.applyForce(direction.multiply(spring.k * displacement * -0.5));
+			}
+			if (spring.node2 !== this.selected) {
+				spring.point2.applyForce(direction.multiply(spring.k * displacement * 0.5));
+			}
 		});
 	};
 
@@ -446,11 +423,18 @@
 		});
 	};
 
+	Layout.ForceDirected.prototype.effectiveDistance = function(originVector, node1, node2) {
+		const originMagnitude = originVector.magnitude();
+		if (node1.data.width == 0) {console.log(node1.name)}
+		const node1Overlap = originVector.rectangleIntersectionMagnitude(node1.data.width || 0.1, node1.data.height || 0.1);
+		const node2Overlap = originVector.rectangleIntersectionMagnitude(node2.data.width || 0.1, node2.data.height || 0.1);
+		const distance = Math.max(0, originMagnitude - node1Overlap - node2Overlap);
+
+		return distance;
+	};
 
 	Layout.ForceDirected.prototype.updateVelocity = function(timestep) {
 		this.eachNode(function(node, point) {
-			// Is this, along with updatePosition below, the only places that your
-			// integration code exist?
 			point.v = point.v.add(point.a.multiply(timestep)).multiply(this.damping);
 			if (point.v.magnitude() > this.maxSpeed) {
 			    point.v = point.v.normalise().multiply(this.maxSpeed);
@@ -461,8 +445,6 @@
 
 	Layout.ForceDirected.prototype.updatePosition = function(timestep) {
 		this.eachNode(function(node, point) {
-			// Same question as above; along with updateVelocity, is this all of
-			// your integration code?
 			point.p = point.p.add(point.v.multiply(timestep));
 		});
 	};
@@ -505,6 +487,8 @@
 
 		Springy.requestAnimationFrame(function step() {
 			t.tick(0.03);
+			//t.tick(0.003);
+			//this.cachedBoundingBox = layout.getBoundingBox();
 
 			if (render !== undefined) {
 				render();
@@ -604,6 +588,18 @@
 		return Math.sqrt(this.x*this.x + this.y*this.y);
 	};
 
+	Vector.prototype.rectangleIntersectionMagnitude = function(width, height) {
+		const radians = this.radians();
+		const absCosAngle = Math.abs(Math.cos(radians));
+        const absSinAngle = Math.abs(Math.sin(radians));
+
+        if (width / 2 * absSinAngle <= height / 2 * absCosAngle) {
+			return width / 2 / absCosAngle;
+		} else {
+			return height / 2 / absSinAngle;
+		}
+	};
+
 	Vector.prototype.radians = function() {
 		return Math.atan2(this.y, this.x);
 	};
@@ -629,11 +625,14 @@
 	};
 
 	// Spring
-	Layout.ForceDirected.Spring = function(point1, point2, length, k) {
+	Layout.ForceDirected.Spring = function(point1, point2, length, k, node1, node2) {
 		this.point1 = point1;
 		this.point2 = point2;
 		this.length = length; // spring length at rest
 		this.k = k; // spring constant (See Hooke's law) .. how stiff the spring is
+
+		this.node1 = node1;
+		this.node2 = node2;
 	};
 
 	// Layout.ForceDirected.Spring.prototype.distanceToPoint = function(point)
@@ -697,34 +696,6 @@
 	Renderer.prototype.stop = function() {
 		this.layout.stop();
 	};
-
-	// Array.forEach implementation for IE support..
-	//https://developer.mozilla.org/en/JavaScript/Reference/Global_Objects/Array/forEach
-	if ( !Array.prototype.forEach ) {
-		Array.prototype.forEach = function( callback, thisArg ) {
-			var T, k;
-			if ( this == null ) {
-				throw new TypeError( " this is null or not defined" );
-			}
-			var O = Object(this);
-			var len = O.length >>> 0; // Hack to convert O.length to a UInt32
-			if ( {}.toString.call(callback) != "[object Function]" ) {
-				throw new TypeError( callback + " is not a function" );
-			}
-			if ( thisArg ) {
-				T = thisArg;
-			}
-			k = 0;
-			while( k < len ) {
-				var kValue;
-				if ( k in O ) {
-					kValue = O[ k ];
-					callback.call( T, kValue, k, O );
-				}
-				k++;
-			}
-		};
-	}
 
 	var isEmpty = function(obj) {
 		for (var k in obj) {

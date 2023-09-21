@@ -426,17 +426,25 @@ graph_relationships = {
     Person: ["case"],
     Play: ["case_set", "character_set"],
     Playbook: [],
+    # Case: ["play"],
+    # Character: ["play", "playbook"],
+    # Location: ["case"],
+    # Person: ["case"],
+    # Play: ["case_set", "character_set"],
+    # Playbook: [],
+
 }
 
 
 def get_graph(model_name, instance_id):
     seen = set()
     to_process = [(model_name, instance_id)]
-    nodes = []
+    nodes = {}
     edges = []
 
     while next_to_process := to_process.pop(0) if len(to_process) else False:
         model_name, instance_id = next_to_process
+        node_id = f"{model_name}-{instance_id}"
         seen.add((model_name, instance_id))
         model_content_type = ContentType.objects.get_by_natural_key(*(model_name.split(".")))
         model = model_content_type.model_class()
@@ -451,13 +459,13 @@ def get_graph(model_name, instance_id):
             for related_instance in value:
                 related_content_type = ContentType.objects.get_for_model(related_instance)
                 related_model_name = f"{related_content_type.app_label}.{related_content_type.model}"
-                edges.append([f"{model_name}-{instance_id}", f"{related_model_name}-{related_instance.pk}"])
+                edges.append([node_id, f"{related_model_name}-{related_instance.pk}"])
                 consider_processing(related_instance, to_process, seen)
 
         node = serialize_instance(model, instance_id)
         if model is Character:
             node["fields"]["name"] = str(instance)
-        nodes.append(node)
+        nodes[node_id] = node
 
     return {"nodes": nodes, "edges": edges}
 
