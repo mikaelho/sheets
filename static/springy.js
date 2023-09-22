@@ -313,6 +313,14 @@
 		return this.nodePoints[node.id];
 	};
 
+	Layout.ForceDirected.prototype.placeWith = function(node, parentNode) {
+		const nodePoint = this.point(node);
+		const parentPoint = this.point(parentNode);
+
+		nodePoint.p.x = parentPoint.p.x + Math.random() / 10;
+		nodePoint.p.y = parentPoint.p.y + Math.random() / 10;
+	}
+
 	Layout.ForceDirected.prototype.spring = function(edge) {
 		if (!(edge.id in this.edgeSprings)) {
 			var length = (edge.data.length !== undefined) ? edge.data.length : 1.0;

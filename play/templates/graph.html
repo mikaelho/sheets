@@ -20,8 +20,8 @@
         .playcase {background-color: #7E7A76}
         .playperson {background-color: #E8E3CD}
         .playlocation {background-color: #C4B7AF}
-        .title {pointer-events: none; font-weight: bold; }
-        .body {pointer-events: none; font-size: smaller; text-transform: uppercase;}
+        .title {pointer-events: none; user-select: none; font-weight: bold; }
+        .body {pointer-events: none; user-select: none; font-size: smaller; text-transform: uppercase;}
     </style>
     <script>
 
@@ -35,6 +35,7 @@
         const nodeLookup = {};
         const nodeDataLookup = {};
         const graph = new Springy.Graph();
+        let currentVisibleNodes = new Set();
 
         const graphData = {{ graph_json }};
         console.log(graphData);
@@ -49,51 +50,6 @@
                     <span class="title">${nodeData.fields.name}</span><br/>
                     <span class="body">${nodeData.fields.description.substring(0, 20)}</span>`;
             },
-        }
-
-        function unusedCreationCode() {
-
-            // Create graph nodes
-            graphData.nodes.forEach(nodeData => {
-                if (nodeData.fields.name) {
-                    const nodeID = nodeData.model + "-" + nodeData.pk;
-                    const node = new Springy.Node(nodeID, {label: nodeData.fields.name});
-                    graph.addNode(node);
-                    nodeLookup[nodeID] = node;
-                    nodeDataLookup[nodeID] = nodeData;
-                } else {
-                    console.log("No name for " + nodeData.model + " - " + nodeData.pk);
-                }
-            });
-
-            // Create graph edges and edge divs
-            graphData.edges.forEach(edgeData => {
-                const edgeID = edgeData[0] + edgeData[1];
-                const source = nodeLookup[edgeData[0]];
-                const target = nodeLookup[edgeData[1]];
-                const edge = new Springy.Edge(edgeID, source, target);
-                graph.addEdge(edge);
-
-                const edgeElement = document.createElement("div");
-                mainElement.appendChild(edgeElement);
-                edgeElement.id = edgeID;
-                edgeElement.className = "edge";
-            });
-
-            // Create node divs
-            graphData.nodes.forEach(nodeData => {
-                const nodeID = nodeData.model + "-" + nodeData.pk;
-                const nodeElement = document.createElement("div");
-                mainElement.appendChild(nodeElement);
-                nodeElement.id = nodeID;
-                nodeElement.className = "node " + nodeData.model.replace(".", "");
-                nodeElement.addEventListener("mouseover", (event) => {
-                    bringToFront(event.target);
-                });
-
-                const builderKey = nodeData.model in builders ? nodeData.model : "default";
-                nodeElement.innerHTML = builders[builderKey](nodeData);
-            });
         }
 
         function bringToFront(nodeElement) {
@@ -112,7 +68,9 @@
           graph,
           400.0, // Spring stiffness
           400.0, // Node repulsion
-          0.5 // Damping
+          0.5, // Damping
+            undefined,  // min energy
+            3.0,  // max speed
         );
 
         function toScreen(p) {
@@ -165,15 +123,6 @@
               nodeElement.addEventListener("dblclick", (event) => {
                   floodFill(event.target.id);
               })
-
-              //const graphSize = fromScreenFactors(new Springy.Vector(screenWidth, screenHeight));
-              //node.data.width = graphSize.x
-              //node.data.height = graphSize.y;
-              //node.data.width = 0.4;
-              //node.data.height = 0.1;
-
-              // console.log(node.data.label, left, top);
-            // console.log(JSON.stringify(node.data.label), JSON.stringify(p));
           }
         );
 
@@ -189,10 +138,10 @@
             const visible = new Set();
 
             const seen = new Set();
-            const toProcess = [[selectedNodeID, distance]];
+            const toProcess = [[selectedNodeID, null, distance]];
 
             do {
-                const [nodeID, distance] = toProcess.shift();
+                const [nodeID, parentNodeID, distance] = toProcess.shift();
                 seen.add(nodeID);
                 let graphNode = nodeLookup[nodeID];
                 if (minNodes > 0 || distance > 0) {
@@ -204,6 +153,11 @@
                     graph.addNode(graphNode);
                     visible.add(graphNode);
                     showOrCreateNode(nodeID);
+
+                    if (!currentVisibleNodes.has(graphNode) && parentNodeID) {
+                        const parentNode = nodeLookup[parentNodeID];
+                        layout.placeWith(graphNode, parentNode);
+                    }
                 } else if (graphNode) {
                     // Try to remove
                     graph.removeNode(graphNode);
@@ -213,10 +167,12 @@
 
                 adjacentNodes.forEach(adjacentNodeID => {
                     if (!seen.has(adjacentNodeID)) {
-                        toProcess.push([adjacentNodeID, distance - 1]);
+                        toProcess.push([adjacentNodeID, nodeID, distance - 1]);
                     }
                 });
             } while(toProcess.length)
+
+            currentVisibleNodes = visible;
 
             return visible;
         }
