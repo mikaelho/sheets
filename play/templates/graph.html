@@ -4,6 +4,8 @@
     <link href="{% static 'css/regular.css' %}" rel="stylesheet">
     <link href="{% static 'css/solid.css' %}" rel="stylesheet">
     <script src="{% static 'springy.js' %}"></script>
+    <script src="https://cdn.pubnub.com/sdk/javascript/pubnub.7.2.2.js"></script>
+
     <style>
         @font-face {font-family: 'Ingeborg'; src: local('Ingeborg Striped'), local('Ingeborg-Striped'), url({% static 'Ingeborg-Striped.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         @font-face {font-family: 'IngeborgHeavy'; src: local('Ingeborg-Heavy'), url({% static 'ingeborg-heavy.otf' %}) format('opentype'); font-weight: bold; font-style: normal;}
@@ -36,7 +38,20 @@
         .actions button:hover {transform: scale(1.5); text-shadow: 0 0 3px white;}
     </style>
     <script>
+        const pubnub = new PubNub({
+            publishKey : "{{ publish_key }}",
+            subscribeKey : "{{ subscribe_key }}",
+            userId: "{{ user_id }}"
+        });
 
+        pubnub.addListener({
+            message: (messageEvent) => {
+                const payload = messageEvent.message;
+                updateNode(payload);
+            },
+        });
+
+        pubnub.subscribe({channels: ["updates"]});
     </script>
 
 </head>
@@ -76,8 +91,12 @@
             default: (nodeData, nodeID) => {
                 let actionContent = "";
                 if (nodeData.fields.visible !== undefined) {
-                    const visibleIcon = nodeData.fields.visible === true ? "fa-circle-check" : "fa-circle";
-                    actionContent += `<button><i class="fa-regular ${visibleIcon    }"></i></button>`;
+                    const visibleIcon = nodeData.fields.visible === true ? "fa-eye" : "fa-eye-slash";
+                    actionContent += `<button onclick="toggleBoolean('${nodeID}', 'visible')"><i class="fa-regular ${visibleIcon}"></i></button>`;
+                }
+                if (nodeData.fields.open !== undefined) {
+                    const openIcon = nodeData.fields.open === true ? "fa-folder-open" : "fa-folder-closed";
+                    actionContent += `<button onclick="toggleBoolean('${nodeID}', 'open')"><i class="fa-regular ${openIcon}"></i></button>`;
                 }
                 if (nodeData.fields.attachment) {
                     actionContent += `<button><i class="fa-regular fa-file-lines"></i></button>`;
@@ -264,7 +283,6 @@
             const nodeElement = document.getElementById(nodeID);
             if (nodeElement) { nodeElement.style.visibility = "visible"; }
             else {
-                console.log(nodeID);
                 const nodeData = graphData.nodes[nodeID];
 
                 const nodeElement = document.createElement("div");
@@ -282,13 +300,20 @@
                 popoverElement.setAttribute("popover", "auto");
                 popoverElement.className = "popup" + nodeData.model.replace(".", "");
 
-                const builderKey = nodeData.model in builders ? nodeData.model : "default";
-                const actionKey = nodeData.model in actionBuilders ? nodeData.model : "default";
-                nodeElement.innerHTML = builders[builderKey](nodeData, nodeID) + actionBuilders[actionKey](nodeData, nodeID);
-
-                const popoverKey = nodeData.model in popoverBuilders ? nodeData.model : "default";
-                popoverElement.innerHTML = popoverBuilders[popoverKey](nodeData, nodeID);
+                updateContents(nodeID);
             }
+        }
+
+        function updateContents(nodeID) {
+            const nodeData = graphData.nodes[nodeID];
+            const nodeElement = document.getElementById(nodeID);
+            const popoverElement = document.getElementById("popover" + nodeID);
+
+            const builderKey = nodeData.model in builders ? nodeData.model : "default";
+            const actionKey = nodeData.model in actionBuilders ? nodeData.model : "default";
+            const popoverKey = nodeData.model in popoverBuilders ? nodeData.model : "default";
+            nodeElement.innerHTML = builders[builderKey](nodeData, nodeID) + actionBuilders[actionKey](nodeData, nodeID);
+            popoverElement.innerHTML = popoverBuilders[popoverKey](nodeData, nodeID);
         }
 
         function hideNode(nodeID) {
@@ -325,6 +350,24 @@
                 }
             })
             return Array.from(nodes);
+        }
+
+        function toggleBoolean(nodeID, key) {
+            const newValue = graphData.nodes[nodeID].fields[key] === false;
+            const [modelName, instanceID] = nodeID.split("-");
+            const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
+            fetch("update_value", {
+                method: "POST",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
+                body: JSON.stringify({modelName: modelName, instanceID: instanceID, key: key, value: newValue}),
+            })
+            .then();
+        }
+
+        function updateNode(payload) {
+            const nodeID = payload.id;
+            graphData.nodes[nodeID] = payload.content;
+            updateContents(nodeID);
         }
 
         floodFill("play.play-1");

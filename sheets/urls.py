@@ -29,6 +29,7 @@ from play.views import modify_and_save_image
 from play.views import report_roll_result
 from play.views import submit_value
 from play.views import update_notes
+from play.views import update_value
 
 
 urlpatterns = [
@@ -41,6 +42,7 @@ urlpatterns = [
     path("report_roll", report_roll_result, name="report_roll"),
     path("case_files", case_files, name="case_files"),
     path("graph", graph_view, name="graph"),
+    path("update_value", update_value, name="update_value"),  # Generic update of any value with pubnub notification
     path("update_note", update_notes, name="update_note"),
     re_path(r"save_image/(?P<type_id>\w+)/(?P<obj_id>\d+)", modify_and_save_image, name="save_image"),
     path("admin/", admin.site.urls),

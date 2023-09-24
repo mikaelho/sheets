@@ -414,7 +414,12 @@ def graph_view(request):
     play_id = int(request.GET.get("play_id"))
     graph_data = get_graph("play.play", play_id)
 
-    context = {"graph_json": mark_safe(json.dumps(graph_data))}
+    context = {
+        "graph_json": mark_safe(json.dumps(graph_data)),
+        "publish_key": os.environ["PUBNUB_PUBLISH"],
+        "subscribe_key": os.environ["PUBNUB_SUBSCRIBE"],
+        "user_id": str(uuid.uuid4()),
+    }
 
     return render(request, "graph.html", context)
 
@@ -462,9 +467,7 @@ def get_graph(model_name, instance_id):
                 edges.append([node_id, f"{related_model_name}-{related_instance.pk}"])
                 consider_processing(related_instance, to_process, seen)
 
-        node = serialize_instance(model, instance_id)
-        if model is Character:
-            node["fields"]["name"] = str(instance)
+        node = serialize_instance(model, instance)
         nodes[node_id] = node
 
     return {"nodes": nodes, "edges": edges}
@@ -476,5 +479,22 @@ def consider_processing(instance, to_process, seen):
         to_process.append((natural_key, instance.id))
 
 
-def serialize_instance(model, instance_id):
-    return json.loads(serializers.serialize("jsonl", model.objects.filter(pk=instance_id)))
+def serialize_instance(model, instance):
+    payload = json.loads(serializers.serialize("jsonl", model.objects.filter(pk=instance.id)))
+    if model is Character:
+        payload["fields"]["name"] = str(instance)
+    return payload
+
+
+def update_value(request):
+    data = json.loads(request.body)
+    model_name = data.get("modelName")
+    instance_id = data.get("instanceID")
+    key = data.get("key")
+    value = data.get("value")
+    content_type = ContentType.objects.get_by_natural_key(*model_name.split("."))
+    instance = content_type.get_object_for_this_type(id=instance_id)
+    setattr(instance, key, value)
+    instance.save()
+
+    return JsonResponse({"ok": True})

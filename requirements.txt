@@ -2,6 +2,7 @@ asgiref
 Django
 markdown
 Pillow
+pubnub
 pypdf
 requests
 sqlparse
