@@ -1,19 +1,21 @@
 {% load static  %}
 <head>
+    <link href="{% static 'css/fontawesome.css' %}" rel="stylesheet">
+    <link href="{% static 'css/regular.css' %}" rel="stylesheet">
+    <link href="{% static 'css/solid.css' %}" rel="stylesheet">
     <script src="{% static 'springy.js' %}"></script>
     <style>
         @font-face {font-family: 'Ingeborg'; src: local('Ingeborg Striped'), local('Ingeborg-Striped'), url({% static 'Ingeborg-Striped.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         @font-face {font-family: 'IngeborgHeavy'; src: local('Ingeborg-Heavy'), url({% static 'ingeborg-heavy.otf' %}) format('opentype'); font-weight: bold; font-style: normal;}
         @font-face {font-family: 'CalendasPlus'; src: local('calendas'), url({% static 'calendas.woff2' %}) format('woff2'); font-weight: normal; font-style: normal;}
         * {
-            padding: 0;
-            margin: 0;
+            padding: 0px; margin: 0px;
             font-family: CalendasPlus, Didot, 'Bodoni MT', 'Noto Serif Display', 'URW Palladio L', P052, Sylfaen, serif;
         }
         body {background-color: black;}
-        div {position: absolute;}
-        .node {background-color: lightcoral; color: black; padding: 8px; border-radius: 4px;}
-        .edge {width: 1px; background-color: grey; transform-origin: top left;}
+        button {background: none; border: none;}
+        .node {position: absolute; background-color: lightcoral; color: black; padding: 8px; border-radius: 4px;}
+        .edge {position: absolute; width: 1px; background-color: grey; transform-origin: top left;}
         .playplay {background-color: #EEA594}
         .playcharacter {background-color: #FFFFCC}
         .createplaybook {background-color: #FFFFCC}
@@ -22,6 +24,16 @@
         .playlocation {background-color: #C4B7AF}
         .title {pointer-events: none; user-select: none; font-weight: bold; }
         .body {pointer-events: none; user-select: none; font-size: smaller; text-transform: uppercase;}
+        [popover] {
+          position: fixed;
+          width: fit-content; height: fit-content;
+          margin: auto; border: solid; padding: 0.25em; inset: 0; overflow: auto;
+          color: CanvasText; background-color: Canvas;
+        }
+        .node .actions {display:none;}
+        .node:hover .actions {display: flex; justify-content: space-between;}
+        .actions button {margin: 4px; transition: all 0.1s linear;}
+        .actions button:hover {transform: scale(1.5); text-shadow: 0 0 3px white;}
     </style>
     <script>
 
@@ -31,6 +43,8 @@
 <body>
     {% csrf_token %}
     <div id="main" style="width: 100%; height: 100%;"></div>
+    <!--<button popovertarget="mypopover">Toggle the popover</button>
+<div id="mypopover" popover>Popover content</div>-->
     <script>
         const nodeLookup = {};
         const nodeDataLookup = {};
@@ -41,14 +55,51 @@
         console.log(graphData);
         const mainElement = document.getElementById("main");
 
+        const fieldsToShow = ["description", "player_notes", "gm_notes"]
+
         const builders = {
-            "default": (nodeData) => {
-                return `<span class="title">${nodeData.fields.name}</span>`;
-            },
-            "play.person": (nodeData) => {
+            default: (nodeData, nodeID) => {
                 return `
-                    <span class="title">${nodeData.fields.name}</span><br/>
-                    <span class="body">${nodeData.fields.description.substring(0, 20)}</span>`;
+                    <div class="title">${nodeData.fields.name}</div>
+                `;
+            },
+            "play.person": (nodeData, nodeID) => {
+                return `
+                    <div>
+                        <span class="title">${nodeData.fields.name}</span><br/>
+                        <span class="body">${nodeData.fields.description.substring(0, 20)}</span>
+                    </div>
+                `;
+            },
+        }
+        const actionBuilders = {
+            default: (nodeData, nodeID) => {
+                let actionContent = "";
+                if (nodeData.fields.visible !== undefined) {
+                    const visibleIcon = nodeData.fields.visible === true ? "fa-circle-check" : "fa-circle";
+                    actionContent += `<button><i class="fa-regular ${visibleIcon    }"></i></button>`;
+                }
+                if (nodeData.fields.attachment) {
+                    actionContent += `<button><i class="fa-regular fa-file-lines"></i></button>`;
+                }
+                actionContent += `<button popovertarget="popover${nodeID}"><i class="fa-regular fa-pen-to-square"></i></button>`;
+                return `<div class="actions">${actionContent}</div>`;
+            }
+        }
+        const popoverBuilders = {
+            default: (nodeData, nodeID) => {
+                let contents = "";
+                for (const [key, value] of Object.entries(nodeData.fields)) {
+                    if (fieldsToShow.includes(key)) {
+                        contents += `<tr><td>${key}</td><td>${value}</td></tr>`;
+                    }
+                }
+                return `
+                    <table>
+                    <tr><th class="title">${nodeData.fields.name}</th></tr>
+                    ${contents}
+                    </table>
+                `;
             },
         }
 
@@ -119,10 +170,6 @@
               const top = screenPosition.y - screenHeight / 2;
               nodeElement.style.left = left + "px";
               nodeElement.style.top = top + "px";
-
-              nodeElement.addEventListener("dblclick", (event) => {
-                  floodFill(event.target.id);
-              })
           }
         );
 
@@ -136,6 +183,7 @@
 
         function getVisibleNodes(selectedNodeID, distance, minNodes) {
             const visible = new Set();
+            const currentVisibleNodeIDs = Array.from(currentVisibleNodes).map((node) => node.id);
 
             const seen = new Set();
             const toProcess = [[selectedNodeID, null, distance]];
@@ -163,8 +211,14 @@
                     graph.removeNode(graphNode);
                     hideNode(nodeID);
                 }
-                const adjacentNodes = getAdjacent(nodeID);
 
+                let adjacentNodes = getAdjacent(nodeID);
+                // Prioritise already-visible nodes
+                adjacentNodes = adjacentNodes.filter(
+                    nodeID => currentVisibleNodeIDs.includes(nodeID)
+                ).concat(
+                    adjacentNodes.filter(nodeID => !currentVisibleNodeIDs.includes(nodeID))
+                );
                 adjacentNodes.forEach(adjacentNodeID => {
                     if (!seen.has(adjacentNodeID)) {
                         toProcess.push([adjacentNodeID, nodeID, distance - 1]);
@@ -210,15 +264,30 @@
             const nodeElement = document.getElementById(nodeID);
             if (nodeElement) { nodeElement.style.visibility = "visible"; }
             else {
+                console.log(nodeID);
                 const nodeData = graphData.nodes[nodeID];
+
                 const nodeElement = document.createElement("div");
                 mainElement.appendChild(nodeElement);
                 nodeElement.id = nodeID;
                 nodeElement.className = "node " + nodeData.model.replace(".", "");
                 nodeElement.addEventListener("mouseover", (event) => {bringToFront(event.target);});
+                nodeElement.addEventListener("click", (event) => {floodFill(nodeID);})
+
+                const popoverID = "popover" + nodeID;
+                const popoverElement = document.createElement("div");
+                const body = document.getElementsByTagName("body")[0];
+                body.appendChild(popoverElement);
+                popoverElement.id = popoverID;
+                popoverElement.setAttribute("popover", "auto");
+                popoverElement.className = "popup" + nodeData.model.replace(".", "");
 
                 const builderKey = nodeData.model in builders ? nodeData.model : "default";
-                nodeElement.innerHTML = builders[builderKey](nodeData);
+                const actionKey = nodeData.model in actionBuilders ? nodeData.model : "default";
+                nodeElement.innerHTML = builders[builderKey](nodeData, nodeID) + actionBuilders[actionKey](nodeData, nodeID);
+
+                const popoverKey = nodeData.model in popoverBuilders ? nodeData.model : "default";
+                popoverElement.innerHTML = popoverBuilders[popoverKey](nodeData, nodeID);
             }
         }
 
