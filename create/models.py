@@ -87,6 +87,7 @@ class Playbook(models.Model):
     sheet7 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook7", on_delete=models.CASCADE)
     sheet8 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook8", on_delete=models.CASCADE)
     sheet9 = models.ForeignKey(Sheet, null=True, blank=True, related_name="playbook9", on_delete=models.CASCADE)
+    attachment = models.FileField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.game.name})"

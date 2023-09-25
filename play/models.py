@@ -56,6 +56,7 @@ class Case(models.Model):
     open = models.BooleanField(default=False, null=True)
     player_notes = models.TextField(null=True, blank=True)
     gm_notes = models.TextField(null=True, blank=True)
+    attachment = models.FileField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.play.name})"

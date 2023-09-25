@@ -36,6 +36,7 @@
         .node:hover .actions {display: flex; justify-content: space-between;}
         .actions button {margin: 4px; transition: all 0.1s linear;}
         .actions button:hover {transform: scale(1.5); text-shadow: 0 0 3px white;}
+        embed {width: 90vw; height: 90vh;}
     </style>
     <script>
         const pubnub = new PubNub({
@@ -99,7 +100,7 @@
                     actionContent += `<button onclick="toggleBoolean('${nodeID}', 'open')"><i class="fa-regular ${openIcon}"></i></button>`;
                 }
                 if (nodeData.fields.attachment) {
-                    actionContent += `<button><i class="fa-regular fa-file-lines"></i></button>`;
+                    actionContent += `<button popovertarget="attachment${nodeID}"><i class="fa-regular fa-file-lines"></i></button>`;
                 }
                 actionContent += `<button popovertarget="popover${nodeID}"><i class="fa-regular fa-pen-to-square"></i></button>`;
                 return `<div class="actions">${actionContent}</div>`;
@@ -120,6 +121,9 @@
                     </table>
                 `;
             },
+            attachment: (nodeData, nodeID) => {
+                return `<embed src="${nodeData.fields.attachment}" type="application/pdf"/>`
+            }
         }
 
         function bringToFront(nodeElement) {
@@ -290,7 +294,9 @@
                 nodeElement.id = nodeID;
                 nodeElement.className = "node " + nodeData.model.replace(".", "");
                 nodeElement.addEventListener("mouseover", (event) => {bringToFront(event.target);});
-                nodeElement.addEventListener("click", (event) => {floodFill(nodeID);})
+                nodeElement.addEventListener("click", (event) => {
+                    if (event.target === event.currentTarget) { floodFill(nodeID); }
+                });
 
                 const popoverID = "popover" + nodeID;
                 const popoverElement = document.createElement("div");
@@ -299,6 +305,15 @@
                 popoverElement.id = popoverID;
                 popoverElement.setAttribute("popover", "auto");
                 popoverElement.className = "popup" + nodeData.model.replace(".", "");
+
+                if (nodeData.fields.attachment) {
+                    const attachmentID = "attachment" + nodeID;
+                    const attachmentElement = document.createElement("div");
+                    body.appendChild(attachmentElement);
+                    attachmentElement.id = attachmentID;
+                    attachmentElement.setAttribute("popover", "auto");
+                    attachmentElement.className = "attachment" + nodeData.model.replace(".", "");
+                }
 
                 updateContents(nodeID);
             }
@@ -314,6 +329,11 @@
             const popoverKey = nodeData.model in popoverBuilders ? nodeData.model : "default";
             nodeElement.innerHTML = builders[builderKey](nodeData, nodeID) + actionBuilders[actionKey](nodeData, nodeID);
             popoverElement.innerHTML = popoverBuilders[popoverKey](nodeData, nodeID);
+
+            if (nodeData.fields.attachment) {
+                const attachmentElement = document.getElementById("attachment" + nodeID);
+                attachmentElement.innerHTML = popoverBuilders["attachment"](nodeData, nodeID);
+            }
         }
 
         function hideNode(nodeID) {
