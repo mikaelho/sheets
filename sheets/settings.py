@@ -32,7 +32,12 @@ ALLOWED_HOSTS = [
     "sheets.mikaelho.repl.co",
     "mikaelhonkala.pythonanywhere.com",
 ]
-CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app", "https://127.0.0.1", "https://sheets.mikaelho.repl.co"]
+CSRF_TRUSTED_ORIGINS = [
+    "https://*.ngrok-free.app",
+    "https://127.0.0.1",
+    "https://sheets.mikaelho.repl.co",
+    "https://mikaelhonkala.pythonanywhere.com",
+]
 
 
 # Application definition
