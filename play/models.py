@@ -8,6 +8,8 @@ class Play(models.Model):
     name = models.CharField(max_length=50)
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     discord_webhook_url = models.CharField(max_length=200, blank=True, null=True)
+    gm_notes = models.TextField(null=True, blank=True)
+    attachment = models.FileField(null=True, blank=True)
 
     def __str__(self):
         return self.name

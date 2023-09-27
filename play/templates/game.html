@@ -100,11 +100,17 @@
 
             pubnub.addListener({
                 message: (messageEvent) => {
-                    showMessage(messageEvent.message.content);
+                    if (messageEvent.channel === "game") {
+                        showMessage(messageEvent.message.content);
+                    }
+                    else if (messageEvent.channel === "characters") {
+                        console.log("REFRESH");
+                        document.location.reload();
+                    }
                 },
             });
 
-            pubnub.subscribe({channels: ["game"]});
+            pubnub.subscribe({channels: ["game", "characters"]});
         }
 
         function showMessage(message) {

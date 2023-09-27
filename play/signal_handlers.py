@@ -35,7 +35,9 @@ pubnub = PubNub(pnconfig)
 def process_save(sender: Model, created, instance, **kwargs):
     node_id = f"{sender._meta.label_lower}-{instance.id}"
     payload = serialize_instance(sender, instance)
-    pubnub.publish().channel("updates").message({
-        "id": node_id,
-        "content": payload,
-    }).sync()
+    message = { "id": node_id, "content": payload}
+
+    pubnub.publish().channel("updates").message(message).sync()
+
+    if sender == Character:
+        pubnub.publish().channel("characters").message(message).sync()

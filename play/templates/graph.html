@@ -37,12 +37,21 @@
         .actions button:hover {transform: scale(1.5); text-shadow: 0 0 3px white;}
         embed {width: 90vw; height: 90vh;}
         .imgHolder {float: left; margin-right: 1em; margin-top: 1em;}
-        img {height: 27vh;}
-        label, input {
+        img {height: 29vh; max-width: 30vw;}
+        label, textarea {
           display:flex;
           flex-direction:column;
         }
+        textarea { font-size: larger; }
         label { margin-top: 8px; font-weight: bold; font-size: small; }
+        .toast {
+            position: fixed; width: 100%; height: 60px; bottom: -60px;
+            background-color: black; color: white;
+            text-align: center; font-size: 32px;
+            transition: bottom 0.5s;
+            z-index: 1000;
+        }
+        iframe {width: 90vw; height: 90vh;}
     </style>
     <script>
         const pubnub = new PubNub({
@@ -53,20 +62,34 @@
 
         pubnub.addListener({
             message: (messageEvent) => {
-                const payload = messageEvent.message;
-                updateNode(payload);
+                if (messageEvent.channel === "updates") {
+                    const payload = messageEvent.message;
+                    updateNode(payload);
+                } else if (messageEvent.channel === "game") {
+                    showMessage(messageEvent.message.content);
+                }
             },
         });
 
-        pubnub.subscribe({channels: ["updates"]});
+        pubnub.subscribe({channels: ["updates", "game"]});
+
+        function showMessage(message) {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.innerText = message;
+            toast.style.bottom = "0px";
+            setTimeout(hideMessage, 6000);
+        }
+
+        function hideMessage() {
+            const toast = document.getElementsByClassName("toast")[0];
+            toast.style.bottom = "-60px";
+        }
     </script>
 
 </head>
 <body>
     {% csrf_token %}
     <div id="main" style="width: 100%; height: 100%;"></div>
-    <!--<button popovertarget="mypopover">Toggle the popover</button>
-<div id="mypopover" popover>Popover content</div>-->
     <script>
         const nodeLookup = {};
         const nodeDataLookup = {};
@@ -108,6 +131,9 @@
                 if (nodeData.fields.attachment) {
                     actionContent += `<button popovertarget="attachment${nodeID}"><i class="fa-regular fa-file-lines"></i></button>`;
                 }
+                if (nodeData.model === "play.play") {
+                    actionContent += `<button popovertarget="game${nodeID}"><i class="fa-regular fa-address-book"></i></button>`;
+                }
                 actionContent += `<button popovertarget="popover${nodeID}"><i class="fa-regular fa-pen-to-square"></i></button>`;
                 return `<div class="actions">${actionContent}</div>`;
             }
@@ -124,22 +150,11 @@
                         contents += `
                         <label>
                             ${fieldName.toUpperCase().replace("_", " ")}
-                            <textarea rows=${rows}>${data[fieldName]}</textarea>
+                            <textarea rows=${rows} onblur="stringUpdate(this, '${nodeID}', '${fieldName}');">${data[fieldName]}</textarea>
                         </label>`;
                     }
                 });
                 return contents;
-                //for (const [key, value] of Object.entries(nodeData.fields)) {
-                //    if (fieldsToShow.includes(key)) {
-                //        contents += `<tr><td>${key}</td><td>${value}</td></tr>`;
-                //    }
-                //}
-                //return `
-                //    <table>
-                //    <tr><th class="title">${nodeData.fields.name}</th></tr>
-                //    ${contents}
-                //    </table>
-                //`;
             },
             attachment: (nodeData, nodeID) => {
                 return `<embed src="${nodeData.fields.attachment}" type="application/pdf"/>`
@@ -335,6 +350,15 @@
                     attachmentElement.className = "attachment" + nodeData.model.replace(".", "");
                 }
 
+                if (nodeData.model === "play.play") {
+                    const charactersID = "game" + nodeID;
+                    const charactersElement = document.createElement("div");
+                    body.appendChild(charactersElement);
+                    charactersElement.id = charactersID;
+                    charactersElement.setAttribute("popover", "auto");
+                    charactersElement.innerHTML = `<iframe src="all_characters?play_id=${nodeData.pk}"</iframe>`
+                }
+
                 updateContents(nodeID);
             }
         }
@@ -394,12 +418,24 @@
 
         function toggleBoolean(nodeID, key) {
             const newValue = graphData.nodes[nodeID].fields[key] === false;
+            sendUpdate(nodeID, key, newValue);
+        }
+
+        function stringUpdate(inputElement, nodeID, key) {
+            console.log("BING");
+            const value = inputElement.value;
+            if (value !== graphData.nodes[nodeID].fields[key]) {
+                sendUpdate(nodeID, key, value);
+            }
+        }
+
+        function sendUpdate(nodeID, key, value) {
             const [modelName, instanceID] = nodeID.split("-");
             const csrf_token = document.querySelector('[name=csrfmiddlewaretoken]').value;
             fetch("update_value", {
                 method: "POST",
                 headers: {"Content-Type": "application/json", "X-CSRFToken": csrf_token},
-                body: JSON.stringify({modelName: modelName, instanceID: instanceID, key: key, value: newValue}),
+                body: JSON.stringify({modelName: modelName, instanceID: instanceID, key: key, value: value}),
             })
             .then();
         }
@@ -412,4 +448,5 @@
 
         floodFill("play.play-1");
     </script>
+    <div class="toast"></div>
 </body>
