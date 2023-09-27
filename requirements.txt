@@ -7,3 +7,5 @@ pypdf
 requests
 sqlparse
 typing_extensions
+python-dotenv
+
