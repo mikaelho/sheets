@@ -9,7 +9,7 @@ class Play(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE)
     discord_webhook_url = models.CharField(max_length=200, blank=True, null=True)
     gm_notes = models.TextField(null=True, blank=True)
-    attachment = models.FileField(null=True, blank=True)
+    attachment = models.FileField(upload_to="attachments", null=True, blank=True)
 
     def __str__(self):
         return self.name
@@ -58,7 +58,7 @@ class Case(models.Model):
     open = models.BooleanField(default=False, null=True)
     player_notes = models.TextField(null=True, blank=True)
     gm_notes = models.TextField(null=True, blank=True)
-    attachment = models.FileField(null=True, blank=True)
+    attachment = models.FileField(upload_to="attachments", null=True, blank=True)
 
     def __str__(self):
         return f"{self.name} ({self.play.name})"
@@ -82,6 +82,7 @@ class Location(models.Model):
     name = models.CharField(max_length=50)
     sort_order = models.PositiveIntegerField(null=True, blank=True)
     visible = models.BooleanField(default=False, null=True)
+    image = models.FileField(upload_to="people_images", null=True, blank=True)
     case = models.ForeignKey(Case, on_delete=models.CASCADE)
     description = models.CharField(max_length=200)
     player_notes = models.TextField(null=True, blank=True)
