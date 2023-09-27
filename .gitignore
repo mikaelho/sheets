@@ -1,7 +1,6 @@
 sheet_images/
 people_images/
 db.sqlite3
-manage.py
 utilities/pages/
 .venv/
 .idea/
