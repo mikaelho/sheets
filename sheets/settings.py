@@ -30,6 +30,7 @@ ALLOWED_HOSTS = [
     "127.0.0.1",
     "d10aee00-455c-4925-a770-15410c52f582.id.repl.co",
     "sheets.mikaelho.repl.co",
+    "mikaelhonkala.pythonanywhere.com",
 ]
 CSRF_TRUSTED_ORIGINS = ["https://*.ngrok-free.app", "https://127.0.0.1", "https://sheets.mikaelho.repl.co"]
 
