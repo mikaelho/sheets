@@ -244,13 +244,13 @@
             const currentVisibleNodeIDs = Array.from(currentVisibleNodes).map((node) => node.id);
 
             const seen = new Set();
-            const toProcess = [[selectedNodeID, null, distance]];
+            const toProcess = [[selectedNodeID, null, distance, false]];
 
             do {
-                const [nodeID, parentNodeID, distance] = toProcess.shift();
+                const [nodeID, parentNodeID, distance, hidden] = toProcess.shift();
                 seen.add(nodeID);
                 let graphNode = nodeLookup[nodeID];
-                if (minNodes > 0 || distance > 0) {
+                if (!hidden && (minNodes > 0 || distance > 0)) {
                     minNodes--;
                     if (!graphNode) {
                         graphNode = new Springy.Node(nodeID, {});
@@ -270,6 +270,8 @@
                     hideNode(nodeID);
                 }
 
+                const ignoring = hidden || (nodeID !== selectedNodeID && graphData.nodes[nodeID].fields.open === false);
+
                 let adjacentNodes = getAdjacent(nodeID);
                 // Prioritise already-visible nodes
                 adjacentNodes = adjacentNodes.filter(
@@ -279,7 +281,7 @@
                 );
                 adjacentNodes.forEach(adjacentNodeID => {
                     if (!seen.has(adjacentNodeID)) {
-                        toProcess.push([adjacentNodeID, nodeID, distance - 1]);
+                        toProcess.push([adjacentNodeID, nodeID, distance - 1, ignoring]);
                     }
                 });
             } while(toProcess.length)
