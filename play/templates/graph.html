@@ -132,7 +132,10 @@
                     actionContent += `<button popovertarget="attachment${nodeID}"><i class="fa-regular fa-file-lines"></i></button>`;
                 }
                 if (nodeData.model === "play.play") {
-                    actionContent += `<button popovertarget="game${nodeID}"><i class="fa-regular fa-address-book"></i></button>`;
+                    actionContent += `
+                        <button popovertarget="game${nodeID}"><i class="fa-regular fa-address-book"></i></button>
+                        <button popovertarget="map${nodeID}"><i class="fa-regular fa-map"></i></button>
+                    `;
                 }
                 actionContent += `<button popovertarget="popover${nodeID}"><i class="fa-regular fa-pen-to-square"></i></button>`;
                 return `<div class="actions">${actionContent}</div>`;
@@ -359,6 +362,13 @@
                     charactersElement.id = charactersID;
                     charactersElement.setAttribute("popover", "auto");
                     charactersElement.innerHTML = `<iframe src="all_characters?play_id=${nodeData.pk}"</iframe>`
+
+                    const mapID = "map" + nodeID;
+                    const mapElement = document.createElement("div");
+                    body.appendChild(mapElement);
+                    mapElement.id = mapID;
+                    mapElement.setAttribute("popover", "auto");
+                    mapElement.innerHTML = `<iframe src="edit_character?character_id=9"</iframe>`
                 }
 
                 updateContents(nodeID);
