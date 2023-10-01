@@ -33,8 +33,8 @@
         }
         .node .actions {display:none;}
         .node:hover .actions {display: flex; justify-content: space-between;}
-        .actions button {margin: 4px; transition: all 0.1s linear;}
-        .actions button:hover {transform: scale(1.5); text-shadow: 0 0 3px white;}
+        .actions button {margin: 4px; padding: 4px; border-radius: 50%; transition: all 0.1s linear;}
+        .actions button:hover {transform: scale(1.5); background-color: white; }
         embed {width: 90vw; height: 90vh;}
         .imgHolder {float: left; margin-right: 1em; margin-top: 1em;}
         img {height: 29vh; max-width: 30vw;}
@@ -52,6 +52,11 @@
             z-index: 1000;
         }
         iframe {width: 90vw; height: 90vh;}
+        .closer {
+            position: absolute; top: 0; right: 0;
+            margin: 4px; padding: 4px; font-size: larger;
+            border-radius: 50%; background-color: white;
+        }
     </style>
     <script>
         const pubnub = new PubNub({
@@ -368,7 +373,8 @@
                     body.appendChild(mapElement);
                     mapElement.id = mapID;
                     mapElement.setAttribute("popover", "auto");
-                    mapElement.innerHTML = `<iframe src="edit_character?character_id=9"</iframe>`
+                    mapElement.innerHTML = `<iframe src="edit_character?character_id=9"</iframe>`;
+                    addCloser(mapElement);
                 }
 
                 updateContents(nodeID);
@@ -377,6 +383,12 @@
 
         function updateContents(nodeID) {
             const nodeData = graphData.nodes[nodeID];
+            //const fields = nodeData.fields;
+            //nodeData.text = "";
+            //["name", "description", "player_notes", "gm_notes"].forEach(field => {
+            //    if (fields[field]) { nodeData.text += fields[field] + " "; }
+            //});
+
             const nodeElement = document.getElementById(nodeID);
             const popoverElement = document.getElementById("popover" + nodeID);
 
@@ -385,11 +397,22 @@
             const popoverKey = nodeData.model in popoverBuilders ? nodeData.model : "default";
             nodeElement.innerHTML = builders[builderKey](nodeData, nodeID) + actionBuilders[actionKey](nodeData, nodeID);
             popoverElement.innerHTML = popoverBuilders[popoverKey](nodeData, nodeID);
+            addCloser(popoverElement);
 
             if (nodeData.fields.attachment) {
                 const attachmentElement = document.getElementById("attachment" + nodeID);
                 attachmentElement.innerHTML = popoverBuilders["attachment"](nodeData, nodeID);
+                addCloser(attachmentElement);
             }
+        }
+
+        function addCloser(popover) {
+            closerElement = document.createElement("div");
+            closerElement.className = "closer";
+            closerElement.innerHTML = `<i class="fa-regular fa-circle-xmark">`
+            closerElement.addEventListener("click", () => {popover.hidePopover();})
+            popover.appendChild(closerElement);
+            return closerElement;
         }
 
         function hideNode(nodeID) {
@@ -456,6 +479,35 @@
             const nodeID = payload.id;
             graphData.nodes[nodeID] = payload.content;
             updateContents(nodeID);
+        }
+
+        function fuzzyMatch(input, list, threshold = 0.6) {
+          if (!input || !list || !Array.isArray(list)) {
+            return [];
+          }
+          input = input.toLowerCase(); // Convert input to lowercase for case-insensitive matching
+          const filteredList = list.map(item => {
+            const text = item.text.toLowerCase(); // Convert the text property to lowercase
+            const distance = calculateLevenshteinDistance(input, text);
+            const maxLength = Math.max(input.length, text.length);
+            const similarity = 1 - distance / maxLength;
+            return { ...item, similarity }; // Include the similarity score in the item
+          }).filter(item => item.similarity >= threshold);
+          filteredList.sort((a, b) => b.similarity - a.similarity);
+          return filteredList;
+        }
+
+        function calculateLevenshteinDistance(s1, s2) {
+          const m = s1.length; const n = s2.length; const dp = [];
+          for (let i = 0; i <= m; i++) { dp[i] = [i]; }
+          for (let j = 0; j <= n; j++) { dp[0][j] = j; }
+          for (let i = 1; i <= m; i++) {
+            for (let j = 1; j <= n; j++) {
+              const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+              dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + cost);
+            }
+          }
+          return dp[m][n];
         }
 
         floodFill("play.play-1");
