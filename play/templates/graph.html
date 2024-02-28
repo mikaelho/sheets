@@ -59,10 +59,17 @@
         }
     </style>
     <script>
+        let userID = localStorage.getItem("user_id");
+        if (!userID) {
+            userID = "{{ user_id }}";
+            console.log("Not found in local storage, setting to " + initialUserID);
+            localStorage.setItem("user_id", userID);
+        }
+
         const pubnub = new PubNub({
             publishKey : "{{ publish_key }}",
             subscribeKey : "{{ subscribe_key }}",
-            userId: "{{ user_id }}"
+            userId: userID
         });
 
         pubnub.addListener({
@@ -102,9 +109,9 @@
         let currentVisibleNodes = new Set();
 
         const graphData = {{ graph_json }};
-        console.log(graphData);
         const mainElement = document.getElementById("main");
 
+        // Field name, lines in the text box
         const fieldsToShow = [["name", 1], ["description", 2], ["player_notes", 5], ["gm_notes", 5]]
 
         const builders = {

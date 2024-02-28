@@ -92,10 +92,17 @@
         let pubnub;
 
         function initialize() {
-            pubnub = new PubNub({
+            let userID = localStorage.getItem("user_id");
+            if (!userID) {
+                userID = "{{ user_id }}";
+                console.log("Not found in local storage, setting to " + initialUserID);
+                localStorage.setItem("user_id", userID);
+            }
+
+            const pubnub = new PubNub({
                 publishKey : "{{ publish_key }}",
                 subscribeKey : "{{ subscribe_key }}",
-                userId: "{{ user_id }}"
+                userId: userID
             });
 
             pubnub.addListener({
