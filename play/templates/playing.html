@@ -266,11 +266,11 @@
         function initialize() {
             setTimeout(revealSheets, 1000);
 
-            let userID = localStorage.getItem("user_id");
+            let userID = localStorage.getItem("playing_user_id");
             if (!userID) {
-                userID = "{{ user_id }}";
-                console.log("Not found in local storage, setting to " + initialUserID);
-                localStorage.setItem("user_id", userID);
+                userID = "playing-{{ user_id }}";
+                console.log("Not found in local storage, setting to " + userID);
+                localStorage.setItem("playing_user_id", userID);
             }
 
             const pubnub = new PubNub({

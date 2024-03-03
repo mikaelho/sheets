@@ -59,11 +59,11 @@
         }
     </style>
     <script>
-        let userID = localStorage.getItem("user_id");
+        let userID = localStorage.getItem("graph_user_id");
         if (!userID) {
-            userID = "{{ user_id }}";
-            console.log("Not found in local storage, setting to " + initialUserID);
-            localStorage.setItem("user_id", userID);
+            userID = "graph-{{ user_id }}";
+            console.log("Not found in local storage, setting to " + userID);
+            localStorage.setItem("graph_user_id", userID);
         }
 
         const pubnub = new PubNub({
@@ -464,7 +464,6 @@
         }
 
         function stringUpdate(inputElement, nodeID, key) {
-            console.log("BING");
             const value = inputElement.value;
             if (value !== graphData.nodes[nodeID].fields[key]) {
                 sendUpdate(nodeID, key, value);
