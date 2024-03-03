@@ -12,10 +12,10 @@ utilities/The_Mastermind.pdf
 utilities/source/
 utilities/target/
 ssh_repl*
-database_up
-files_up
-db_dump_down
-code_up
+utilities/old_replit_scripts/database_up
+utilities/old_replit_scripts/files_up
+utilities/old_replit_scripts/db_dump_down
+utilities/old_replit_scripts/code_up
 static/springyui.js
 static/demo.html
 The_Limehouse_Lurker.pdf
