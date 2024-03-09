@@ -99,7 +99,7 @@
                 localStorage.setItem("game_user_id", userID);
             }
 
-            const pubnub = new PubNub({
+            pubnub = new PubNub({
                 publishKey : "{{ publish_key }}",
                 subscribeKey : "{{ subscribe_key }}",
                 userId: userID
