@@ -161,8 +161,11 @@ def edit_character(request):
                     >{value}</textarea>
                 """
             elif box_position.box.kind == Box.Kind.OVERLAY:
+                content = bool(box_position.box.meta) and box_position.box.meta.get("content") or ""
                 widgets += f"""
-                    <div style="position: absolute; {get_position(box_position)}; background-color: white;"></div>
+                    <div class="tiny" style="
+                        position: absolute; {get_position(box_position)}; background-color: white; overflow: auto;
+                    ">{markdown(content)}</div>
                 """
             elif box_position.box.kind == Box.Kind.CHECKABLE_TEXT_FIELD:
                 value = get_value(character, box_position, {"state": False, "content": ""})
