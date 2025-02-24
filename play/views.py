@@ -313,7 +313,7 @@ def case_files(request):
 
 def format_case(case: Case):
     people = Person.objects.filter(case=case, visible=True).order_by(F("sort_order").asc(nulls_last=True))
-    locations = Location.objects.filter(case=case, visible=True).order_by(F("sort_order").asc(nulls_last=True))
+    locations = Location.objects.filter(case=case, visible=True).order_by(F("sort_order").desc(nulls_last=True))
 
     if case.image:
         title = f'<img src="{case.image.url}" style="height: 70px; fit-image:contain;">'
